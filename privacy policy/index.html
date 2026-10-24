@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Privacy Policy for HayGo, a mobile web browser developed by Subhojit Haldar."/>
+  <title>Privacy Policy – HayGo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0d0f14; --surface: #161a23; --card: #1c2130; --border: #262c3d;
+      --accent: #5b8af5; --accent-soft: rgba(91,138,245,0.12); --text: #e8ecf4;
+      --muted: #8892a4; --heading: #ffffff; --radius: 14px; --radius-sm: 8px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 15px; line-height: 1.75; padding: 0 16px 60px; }
+    header { max-width: 720px; margin: 0 auto; padding: 48px 0 36px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; }
+    .app-icon { width: 80px; height: 80px; background: var(--card); border: 1px solid var(--border); border-radius: 22px; display: flex; align-items: center; justify-content: center; font-size: 36px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+    .badge { display: inline-block; background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(91,138,245,0.25); }
+    header h1 { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; color: var(--heading); letter-spacing: -0.02em; }
+    .meta { color: var(--muted); font-size: 13px; } .meta span { color: var(--accent); }
+    .container { max-width: 720px; margin: 0 auto; }
+    .toc { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 32px; }
+    .toc-title { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; }
+    .toc ol { padding-left: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; }
+    .toc ol li { font-size: 13px; } .toc ol li a { color: var(--muted); text-decoration: none; transition: color 0.2s; } .toc ol li a:hover { color: var(--accent); }
+    @media (max-width: 480px) { .toc ol { grid-template-columns: 1fr; } }
+    section { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 16px; scroll-margin-top: 20px; }
+    section h2 { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; color: var(--heading); margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+    .sec-num { background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: 700; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    p { margin-bottom: 10px; color: var(--text); } p:last-child { margin-bottom: 0; }
+    .perm-list { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+    .perm-item, .purpose-card, .contact-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; }
+    .perm-name { font-family: 'Space Grotesk', sans-serif; font-size: 12px; color: var(--accent); font-weight: 600; letter-spacing: 0.04em; margin-bottom: 3px; }
+    .perm-desc { font-size: 13px; color: var(--muted); line-height: 1.55; }
+    .purpose-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+    @media (max-width: 480px) { .purpose-grid, .contact-grid { grid-template-columns: 1fr; } }
+    .purpose-card { padding: 12px 14px; } .purpose-icon { font-size: 20px; margin-bottom: 6px; }
+    .purpose-title { font-size: 13px; font-weight: 600; color: var(--heading); margin-bottom: 3px; }
+    .purpose-text { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    ul.plain { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    ul.plain li { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; color: var(--text); }
+    ul.plain li::before { content: '›'; color: var(--accent); font-size: 16px; flex-shrink: 0; margin-top: -1px; }
+    .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+    .contact-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+    .contact-value { font-size: 13px; font-weight: 500; color: var(--heading); word-break: break-word; }
+    .contact-value a { color: var(--accent); text-decoration: none; }
+    .alert { background: rgba(91,138,245,0.08); border: 1px solid rgba(91,138,245,0.2); border-radius: var(--radius-sm); padding: 12px 16px; font-size: 13px; color: var(--muted); margin-top: 10px; }
+    .alert strong { color: var(--accent); }
+    footer { max-width: 720px; margin: 32px auto 0; text-align: center; color: var(--muted); font-size: 12px; border-top: 1px solid var(--border); padding-top: 24px; }
+    footer strong { color: var(--text); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="app-icon" aria-hidden="true">🌐</div>
+  <span class="badge">Privacy Policy</span>
+  <h1>HayGo</h1>
+  <p class="meta">Package: <span>com.haygo</span> &nbsp;·&nbsp; Last updated: <span>October 24, 2026</span></p>
+</header>
+<div class="container">
+  <div class="toc">
+    <div class="toc-title">Table of Contents</div>
+    <ol>
+      <li><a href="#s1">Interpretation &amp; Definitions</a></li>
+      <li><a href="#s2">Information &amp; Permissions</a></li>
+      <li><a href="#s3">How Information Is Used</a></li>
+      <li><a href="#s4">Local Data &amp; Retention</a></li>
+      <li><a href="#s5">Third-Party Websites</a></li>
+      <li><a href="#s6">Your Choices &amp; Rights</a></li>
+      <li><a href="#s7">Sharing &amp; Disclosure</a></li>
+      <li><a href="#s8">Security</a></li>
+      <li><a href="#s9">Children's Privacy</a></li>
+      <li><a href="#s10">External Services</a></li>
+      <li><a href="#s11">Policy Changes</a></li>
+      <li><a href="#s12">Grievance Officer</a></li>
+      <li><a href="#s13">Contact Us</a></li>
+    </ol>
+  </div>
+
+  <section id="s1">
+    <h2><span class="sec-num">1</span> Interpretation &amp; Definitions</h2>
+    <p><strong>"App"</strong> refers to HayGo (com.haygo), a mobile web browser developed by Subhojit Haldar.</p>
+    <p><strong>"We / Us / Our"</strong> refers to the developer and owner of HayGo — Subhojit Haldar, operating from West Bengal, India.</p>
+    <p><strong>"You / User"</strong> refers to any individual who installs or uses HayGo.</p>
+    <p><strong>"Personal Data"</strong> means information that relates to an identified or identifiable individual.</p>
+    <p><strong>"Website Data"</strong> means information associated with websites you visit, such as browsing history, downloaded files, cookies, and site storage, where supported by the browser.</p>
+  </section>
+
+  <section id="s2">
+    <h2><span class="sec-num">2</span> Information &amp; Permissions</h2>
+    <p>HayGo is a web browser. Information may be processed to load websites and provide browser features such as back/forward navigation, refresh, home, device-view options, downloads, browsing history, and the floating menu. The app's Android package lists the permissions below. Actual use depends on the feature, Android version, and permissions granted by you.</p>
+    <ul class="perm-list">
+      <li class="perm-item"><div class="perm-name">INTERNET</div><div class="perm-desc">Allows the browser to connect to websites and online services you choose to visit.</div></li>
+      <li class="perm-item"><div class="perm-name">ACCESS_NETWORK_STATE</div><div class="perm-desc">Allows the app to check network connectivity status.</div></li>
+      <li class="perm-item"><div class="perm-name">ACCESS_WIFI_STATE</div><div class="perm-desc">Allows the app to access Wi-Fi connection state information.</div></li>
+      <li class="perm-item"><div class="perm-name">CAMERA</div><div class="perm-desc">May be used when a website you visit requests camera access, subject to Android and browser permission controls.</div></li>
+      <li class="perm-item"><div class="perm-name">RECORD_AUDIO</div><div class="perm-desc">May be used when a website requests microphone access, subject to permission controls.</div></li>
+      <li class="perm-item"><div class="perm-name">ACCESS_COARSE_LOCATION</div><div class="perm-desc">May provide approximate location if a website requests it and you grant access.</div></li>
+      <li class="perm-item"><div class="perm-name">ACCESS_FINE_LOCATION</div><div class="perm-desc">May provide precise location if a website requests it and you grant access.</div></li>
+      <li class="perm-item"><div class="perm-name">POST_NOTIFICATIONS</div><div class="perm-desc">Allows notifications where the app uses them and you permit them.</div></li>
+      <li class="perm-item"><div class="perm-name">READ_MEDIA_IMAGES</div><div class="perm-desc">Supports access to images selected or made available for browser features such as uploading files.</div></li>
+      <li class="perm-item"><div class="perm-name">READ_MEDIA_VIDEO</div><div class="perm-desc">Supports access to video media where needed for a user-selected browser action.</div></li>
+      <li class="perm-item"><div class="perm-name">READ_MEDIA_AUDIO</div><div class="perm-desc">Supports access to audio media where needed for a user-selected browser action.</div></li>
+      <li class="perm-item"><div class="perm-name">READ_MEDIA_VISUAL_USER_SELECTED</div><div class="perm-desc">Supports access to images or videos that you specifically select through Android's media picker.</div></li>
+      <li class="perm-item"><div class="perm-name">USE_BIOMETRIC</div><div class="perm-desc">Allows biometric authentication if the app invokes a supported biometric feature.</div></li>
+      <li class="perm-item"><div class="perm-name">VIBRATE</div><div class="perm-desc">Allows vibration for supported app interactions or feedback.</div></li>
+      <li class="perm-item"><div class="perm-name">WAKE_LOCK</div><div class="perm-desc">Allows the app to keep the device awake for certain operations when needed.</div></li>
+      <li class="perm-item"><div class="perm-name">MODIFY_AUDIO_SETTINGS</div><div class="perm-desc">Allows changes to audio settings for supported media or website functions.</div></li>
+      <li class="perm-item"><div class="perm-name">DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION</div><div class="perm-desc">An app-defined permission related to internal broadcast receiver security; it is not, by itself, a request to collect personal information.</div></li>
+    </ul>
+    <div class="alert"><strong>Important:</strong> A permission being listed does not mean that the app continuously accesses that information. Camera, microphone, location, and media access should occur only when the relevant feature is used and permission is granted. Review Android permission settings to control access.</div>
+    <p>Websites you visit may independently receive information such as your IP address, browser/device details, and information you submit to them. Their collection practices are governed by their own privacy policies.</p>
+  </section>
+
+  <section id="s3">
+    <h2><span class="sec-num">3</span> How Information Is Used</h2>
+    <div class="purpose-grid">
+      <div class="purpose-card"><div class="purpose-icon">🌐</div><div class="purpose-title">Website Browsing</div><div class="purpose-text">Load and display websites you choose to visit.</div></div>
+      <div class="purpose-card"><div class="purpose-icon">🧭</div><div class="purpose-title">Browser Controls</div><div class="purpose-text">Provide navigation, refresh, home, and display-mode controls.</div></div>
+      <div class="purpose-card"><div class="purpose-icon">⬇️</div><div class="purpose-title">Downloads &amp; History</div><div class="purpose-text">Show download activity and browsing history where those features are used.</div></div>
+      <div class="purpose-card"><div class="purpose-icon">🛡️</div><div class="purpose-title">Permissions &amp; Protection</div><div class="purpose-text">Support website features and browser controls, including the app's HTTPS-only restriction as implemented.</div></div>
+    </div>
+    <p>HayGo is not intended to request information unrelated to browser functions. This policy does not claim that websites visited through the browser are prevented from collecting information.</p>
+  </section>
+
+  <section id="s4">
+    <h2><span class="sec-num">4</span> Local Data &amp; Retention</h2>
+    <p>Browsing history, download records, cookies, and website storage may be kept on your device by the app or its web-rendering component, depending on the features used and platform behavior.</p>
+    <ul class="plain">
+      <li>You may be able to clear browsing history, downloads, cookies, or website data through the browser or Android settings, where those controls are available.</li>
+      <li>Downloaded files may remain on your device until you delete them.</li>
+      <li>Websites you visit may store or retain information on their own systems under their own policies.</li>
+      <li>This policy does not assert a server-side retention period for HayGo because no such collection or retention practice has been confirmed for this document.</li>
+    </ul>
+  </section>
+
+  <section id="s5">
+    <h2><span class="sec-num">5</span> Third-Party Websites</h2>
+    <p>HayGo lets you access third-party websites. Those websites may use cookies, trackers, account systems, analytics, advertising, or other technologies and may collect information directly from you or your device.</p>
+    <p>We do not control the content, security, or privacy practices of third-party websites. Review the privacy policy and permissions of each website or service you use. The app's HTTPS-only restriction does not guarantee that a website itself is trustworthy.</p>
+  </section>
+
+  <section id="s6">
+    <h2><span class="sec-num">6</span> Your Choices &amp; Rights</h2>
+    <ul class="plain">
+      <li>You can manage Android permissions for camera, microphone, location, notifications, and media through your device settings.</li>
+      <li>You can choose which websites to visit and what information to submit to them.</li>
+      <li>Where browser controls are available, you can clear browsing history and other locally stored website data.</li>
+      <li>Depending on applicable law, you may request access to, correction of, or deletion of personal information that we hold about you.</li>
+    </ul>
+    <div class="alert">To ask a privacy question or make a request, contact <strong>business.tizongaming@gmail.com</strong>. We will review and respond within a reasonable period and as required by applicable law.</div>
+  </section>
+
+  <section id="s7">
+    <h2><span class="sec-num">7</span> Sharing &amp; Disclosure</h2>
+    <p>We do not sell personal information as a stated purpose of HayGo. Information is sent to websites you choose to visit as necessary for those websites to operate, and those websites may process it under their own policies.</p>
+    <ul class="plain">
+      <li><strong>Websites you visit:</strong> Your browser requests and information you submit are sent to the destination website.</li>
+      <li><strong>Legal requirements:</strong> Information may be disclosed if required by applicable law or a valid legal process.</li>
+      <li><strong>Protection:</strong> Information may be handled as necessary to protect rights, safety, and security, subject to applicable law.</li>
+    </ul>
+    <p>No third-party analytics, advertising SDK, or external data-sharing arrangement is asserted here because these have not been verified from the supplied screenshots.</p>
+  </section>
+
+  <section id="s8">
+    <h2><span class="sec-num">8</span> Security</h2>
+    <p>HayGo is designed to allow HTTPS websites and block HTTP websites, as described for the app. HTTPS helps protect data in transit between your device and a website, but it does not guarantee that a website is legitimate or safe.</p>
+    <p>No app, website, or internet transmission can be guaranteed completely secure. Keep your device updated, manage permissions carefully, and avoid submitting sensitive information to websites you do not trust.</p>
+  </section>
+
+  <section id="s9">
+    <h2><span class="sec-num">9</span> Children's Privacy</h2>
+    <p>HayGo is a general-purpose browser and is not specifically designed to collect personal information from children. Websites opened in the browser may have their own age requirements and privacy practices.</p>
+    <p>Parents or guardians who believe that personal information has been provided to us may contact <a href="mailto:business.tizongaming@gmail.com" style="color:var(--accent)">business.tizongaming@gmail.com</a>.</p>
+  </section>
+
+  <section id="s10">
+    <h2><span class="sec-num">10</span> External Services</h2>
+    <p>The app uses internet access to load websites. Websites, web content providers, and Android platform services operate independently and may process information under their own terms and privacy policies. Any external service linked from a website is outside our direct control.</p>
+  </section>
+
+  <section id="s11">
+    <h2><span class="sec-num">11</span> Policy Changes</h2>
+    <p>We may update this Privacy Policy to reflect changes to HayGo, our practices, or applicable legal requirements. The "Last updated" date at the top will be revised when the policy changes.</p>
+    <p>Please review this page periodically.</p>
+  </section>
+
+  <section id="s12">
+    <h2><span class="sec-num">12</span> Grievance Officer</h2>
+    <p>The contact details for privacy questions and grievances are:</p>
+    <div class="contact-grid" style="margin-top:14px">
+      <div class="contact-card"><div class="contact-label">Name</div><div class="contact-value">Subhojit Haldar</div></div>
+      <div class="contact-card"><div class="contact-label">Designation</div><div class="contact-value">Grievance Officer / Developer</div></div>
+      <div class="contact-card"><div class="contact-label">Email</div><div class="contact-value"><a href="mailto:business.tizongaming@gmail.com">business.tizongaming@gmail.com</a></div></div>
+      <div class="contact-card"><div class="contact-label">Phone</div><div class="contact-value">+91 8637856826</div></div>
+      <div class="contact-card" style="grid-column:span 2"><div class="contact-label">Address</div><div class="contact-value">West Bengal, India</div></div>
+    </div>
+    <div class="alert" style="margin-top:14px">Grievances will be acknowledged within <strong>24 hours</strong> and resolved within <strong>15 working days</strong> of receipt.</div>
+  </section>
+
+  <section id="s13">
+    <h2><span class="sec-num">13</span> Contact Us</h2>
+    <p>If you have questions or concerns about this Privacy Policy or HayGo's handling of information, contact:</p>
+    <div class="contact-grid" style="margin-top:14px">
+      <div class="contact-card"><div class="contact-label">Developer</div><div class="contact-value">Subhojit Haldar</div></div>
+      <div class="contact-card"><div class="contact-label">App Name</div><div class="contact-value">HayGo</div></div>
+      <div class="contact-card"><div class="contact-label">Email</div><div class="contact-value"><a href="mailto:business.tizongaming@gmail.com">business.tizongaming@gmail.com</a></div></div>
+      <div class="contact-card"><div class="contact-label">Phone</div><div class="contact-value">+91 8637856826</div></div>
+      <div class="contact-card"><div class="contact-label">Package Name</div><div class="contact-value">com.haygo</div></div>
+      <div class="contact-card"><div class="contact-label">Location</div><div class="contact-value">West Bengal, India</div></div>
+    </div>
+  </section>
+</div>
+<footer>
+  <p><strong>HayGo</strong> &nbsp;·&nbsp; com.haygo</p>
+  <p style="margin-top:6px">© 2026 Subhojit Haldar. All rights reserved. &nbsp;·&nbsp; West Bengal, India</p>
+</footer>
+</body>
+</html>
