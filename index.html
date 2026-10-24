@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>HayGo</title>
+<link rel="icon" type="image/jpeg" href="https://i.ibb.co/ymnV03Fq/20261019-102733.jpg">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700,900&display=swap" rel="stylesheet">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#7B2FFF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+/* ===================== TOKENS ===================== */
+:root {
+  --primary:      #7B2FFF;
+  --primary-dim:  rgba(123,47,255,0.12);
+  --bg:           #08080C;
+  --surface:      #0e0e14;
+  --surface2:     #141420;
+  --surface3:     #1a1a28;
+  --surface4:     #20202f;
+  --border:       #23233a;
+  --border-hi:    #32324d;
+  --text:         #f0f0f8;
+  --text-sub:     #8888aa;
+  --text-dim:     #44445a;
+  --error:        #ff4545;
+  --success:      #00e676;
+  --font:         'Satoshi', sans-serif;
+  --r-card:       1.35rem;
+  --r-input:      0.8rem;
+  --r-btn:        0.75rem;
+  --shadow:       0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(123,47,255,0.08);
+}
+
+/* ===================== RESET ===================== */
+*,*::before,*::after { box-sizing:border-box; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; -webkit-tap-highlight-color:transparent; }
+html,body { height:100%; margin:0; }
+body {
+  font-family:var(--font); background:var(--bg); color:var(--text);
+  min-height:100dvh; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  overflow-x:hidden; user-select:none; padding:20px 16px;
+}
+
+/* ===================== KEYFRAMES ===================== */
+@keyframes slideUp  { from{opacity:0;transform:translateY(28px)} to{opacity:1;transform:translateY(0)} }
+@keyframes scaleIn  { 0%{opacity:0;transform:scale(0.88)} 65%{transform:scale(1.02)} 100%{opacity:1;transform:scale(1)} }
+@keyframes fadeIn   { from{opacity:0} to{opacity:1} }
+@keyframes glow     { 0%,100%{box-shadow:0 0 0 2px rgba(123,47,255,0.2),0 0 18px rgba(123,47,255,0.08)} 50%{box-shadow:0 0 0 2px rgba(123,47,255,0.5),0 0 28px rgba(123,47,255,0.22)} }
+@keyframes rgbMove  { 0%{background-position:0% 0%} 100%{background-position:400% 0%} }
+@keyframes shimmer  { 0%{transform:translateX(-100%)} 100%{transform:translateX(250%)} }
+@keyframes popIn    { 0%{opacity:0;transform:scale(0.72)} 60%{transform:scale(1.05)} 100%{opacity:1;transform:scale(1)} }
+@keyframes toastIn  { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+@keyframes toastOut { from{opacity:1;transform:translateX(-50%) translateY(0)} to{opacity:0;transform:translateX(-50%) translateY(10px)} }
+
+/* ===================== PROGRESS BAR ===================== */
+#pb-wrap { position:fixed;top:0;left:0;width:100%;height:3px;z-index:9999;background:rgba(255,255,255,0.02); }
+#pb { width:0%;height:100%; background:linear-gradient(90deg,#ff004c,#ff7300,#ffe600,#00ff88,#00d4ff,#6600ff,#ff00bb,#ff004c); background-size:400% 100%; animation:rgbMove 1.6s linear infinite; box-shadow:0 0 10px rgba(255,80,80,0.5); transition:width 0.5s cubic-bezier(0.22,1,0.36,1); }
+
+/* ===================== BG GRID + GLOW ===================== */
+body::before { content:'';position:fixed;inset:0;z-index:0;pointer-events:none; background-image:linear-gradient(rgba(255,255,255,0.013) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.013) 1px,transparent 1px);background-size:48px 48px; }
+body::after  { content:'';position:fixed;inset:0;z-index:0;pointer-events:none; background:radial-gradient(ellipse 70% 55% at 50% -5%,rgba(123,47,255,0.1) 0%,transparent 65%); }
+
+/* ===================== WRAPPER ===================== */
+.app-wrap { position:relative;z-index:1;width:100%;max-width:430px; animation:slideUp 0.65s cubic-bezier(0.2,0.8,0.2,1) both; }
+
+/* ===================== CARD ===================== */
+.card { background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:24px 20px;display:flex;flex-direction:column;gap:20px;box-shadow:var(--shadow);position:relative;overflow:hidden; }
+.card::before { content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 5%,rgba(123,47,255,0.6) 50%,transparent 95%); }
+
+/* ===================== HEADER ===================== */
+.header { display:flex;align-items:center;justify-content:space-between; }
+.header-brand { display:flex;align-items:center;gap:11px; }
+.logo-mark { width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(123,47,255,0.45),0 0 0 1px rgba(123,47,255,0.25);flex-shrink:0;overflow:hidden; }
+.logo-mark img { width:36px;height:36px;border-radius:10px;object-fit:cover;display:block; }
+.brand-text h1 { font-size:1.2rem;font-weight:900;margin:0;letter-spacing:-0.025em;line-height:1.1; }
+.brand-text p  { color:var(--text-sub);font-size:0.71rem;font-weight:500;letter-spacing:0.02em;margin:0; }
+.hdr-actions   { display:flex;gap:6px; }
+.ico-btn { width:34px;height:34px;background:var(--surface3);border:1px solid var(--border-hi);border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-sub);transition:background 0.18s,border-color 0.18s,color 0.18s,transform 0.18s; }
+.ico-btn:hover { background:var(--surface4);border-color:var(--primary);color:var(--primary);transform:translateY(-1px); }
+.ico-btn:active { transform:scale(0.92); }
+.ico-btn svg { width:15px;height:15px;stroke:currentColor; }
+
+/* ===================== SEARCH ===================== */
+.search-wrap { position:relative; }
+.s-icon { position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text-dim);pointer-events:none;display:flex;align-items:center;transition:color 0.2s; }
+.search-wrap:focus-within .s-icon { color:var(--primary); }
+.s-clear { position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-dim);padding:3px;display:none;align-items:center;justify-content:center;border-radius:4px;transition:color 0.18s; }
+.s-clear.vis { display:flex; }
+.s-clear:hover { color:var(--text); }
+.s-clear svg { width:13px;height:13px;stroke:currentColor; }
+.input-box { width:100%;background:#09090b;border:1.5px solid var(--border);border-radius:var(--r-input);padding:13px 38px 13px 40px;color:var(--text);font-family:var(--font);font-size:0.92rem;font-weight:500;outline:none;transition:border-color 0.22s,transform 0.22s;user-select:text;-webkit-user-select:text;-moz-user-select:text;-ms-user-select:text;cursor:text; }
+.input-box::-webkit-input-placeholder { color:var(--text-dim); }
+.input-box::-moz-placeholder { color:var(--text-dim); }
+.input-box:-ms-input-placeholder { color:var(--text-dim); }
+.input-box::placeholder { color:var(--text-dim); }
+.input-box:focus { border-color:var(--primary);animation:glow 2.2s ease-in-out infinite;transform:translateY(-1px); }
+.input-box.err { border-color:var(--error)!important;animation:none!important; }
+.err-msg { color:var(--error);font-size:0.7rem;font-weight:600;padding:5px 2px 0;display:none; }
+.err-msg.show { display:block; }
+
+/* ===================== LAUNCH BUTTON ===================== */
+.launch-btn { width:100%;padding:13px 20px;background:linear-gradient(135deg,#9B3FFF 0%,#6615FF 60%,#4400DD 100%);color:#fff;border:none;border-radius:var(--r-btn);font-family:var(--font);font-weight:800;font-size:0.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;position:relative;overflow:hidden;box-shadow:0 4px 20px rgba(123,47,255,0.35),inset 0 1px 0 rgba(255,255,255,0.18);transition:opacity 0.18s,transform 0.18s cubic-bezier(0.175,0.885,0.32,1.275),box-shadow 0.18s;letter-spacing:0.01em;margin-top:10px; }
+.launch-btn:hover { opacity:0.9;transform:translateY(-2px);box-shadow:0 8px 28px rgba(123,47,255,0.5); }
+.launch-btn:active { transform:scale(0.97); }
+.launch-btn .shim { position:absolute;top:0;left:0;width:35%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.14),transparent);animation:shimmer 2.8s ease-in-out infinite;pointer-events:none; }
+.launch-btn svg { width:15px;height:15px;stroke:#fff;flex-shrink:0; }
+
+/* ===================== SECTION HEADER ===================== */
+.sec-head { display:flex;align-items:center;gap:10px;padding-top:18px;border-top:1px solid var(--border); }
+.sec-label { font-size:0.64rem;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:0.14em;white-space:nowrap; }
+.sec-rule  { flex:1;height:1px;background:var(--border); }
+.count-pill { background:var(--primary-dim);color:var(--primary);font-size:0.6rem;font-weight:800;padding:2px 7px;border-radius:999px;border:1px solid rgba(123,47,255,0.22); }
+
+/* ===================== SHORTCUTS GRID ===================== */
+.sc-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:12px; }
+.sc-item { background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 5px 10px;display:flex;flex-direction:column;align-items:center;gap:7px;font-size:0.62rem;font-weight:700;color:var(--text-sub);cursor:pointer;touch-action:none;animation:popIn 0.42s both;transition:border-color 0.22s,background 0.22s,transform 0.22s cubic-bezier(0.175,0.885,0.32,1.275),color 0.2s,box-shadow 0.22s;position:relative;overflow:hidden;user-select:none;-webkit-user-select:none; }
+.sc-item::after { content:'';position:absolute;inset:0;border-radius:inherit;background:var(--primary-dim);opacity:0;transition:opacity 0.22s;pointer-events:none; }
+.sc-item:hover { border-color:var(--primary);transform:translateY(-3px);color:var(--text);box-shadow:0 6px 20px rgba(0,0,0,0.4); }
+.sc-item:hover::after { opacity:1; }
+.sc-item:active { transform:scale(0.91); }
+.sc-item.dragging { opacity:0.4;transform:scale(1.1);z-index:10;border-color:var(--primary);box-shadow:0 8px 32px rgba(123,47,255,0.3); }
+.sc-item.drag-over { border-color:var(--primary);transform:scale(1.04);box-shadow:0 0 0 3px rgba(123,47,255,0.22); }
+.sc-item img { width:28px;height:28px;border-radius:7px;pointer-events:none;transition:transform 0.28s; }
+.sc-item:hover img { transform:scale(1.14) rotate(5deg); }
+.sc-name { width:100%;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 3px; }
+
+/* Add button */
+.add-btn { background:transparent;border:1.5px dashed var(--border-hi);color:var(--primary); }
+.add-btn:hover { border-color:var(--primary);border-style:solid;background:var(--primary-dim); }
+.add-btn svg { width:17px;height:17px;stroke:currentColor; }
+.empty-st { grid-column:1/-1;text-align:center;padding:14px 0 6px;color:var(--text-dim);font-size:0.73rem;font-weight:600;display:none; }
+
+/* ===================== OVERLAY ===================== */
+.overlay { position:fixed;inset:0;background:rgba(0,0,0,0.72);backdrop-filter:blur(14px) saturate(0.55);-webkit-backdrop-filter:blur(14px) saturate(0.55);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px;animation:fadeIn 0.18s; }
+.overlay.open { display:flex; }
+
+/* ===================== MODAL ===================== */
+.modal { background:var(--surface);border:1px solid var(--border-hi);border-radius:1.25rem;padding:0;width:100%;max-width:370px;display:flex;flex-direction:column;animation:scaleIn 0.3s cubic-bezier(0.175,0.885,0.32,1.275);box-shadow:0 32px 80px rgba(0,0,0,0.85),0 0 0 1px rgba(255,255,255,0.04);overflow:hidden;position:relative; }
+.modal::before { content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 8%,rgba(123,47,255,0.6) 50%,transparent 92%); }
+.modal-hdr { display:flex;align-items:flex-start;justify-content:space-between;padding:20px 20px 0;gap:10px; }
+.modal-title { font-size:0.97rem;font-weight:800;margin:0;letter-spacing:-0.01em; }
+.modal-sub { font-size:0.72rem;color:var(--text-sub);font-weight:500;margin:3px 0 0; }
+.modal-x { width:28px;height:28px;border-radius:7px;background:var(--surface3);border:1px solid var(--border-hi);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-sub);transition:background 0.18s,color 0.18s;flex-shrink:0; }
+.modal-x:hover { background:var(--surface4);color:var(--text); }
+.modal-x svg { width:13px;height:13px;stroke:currentColor; }
+.modal-body { padding:16px 20px 20px;display:flex;flex-direction:column;gap:12px; }
+.field { display:flex;flex-direction:column;gap:5px; }
+.field-lbl { font-size:0.66rem;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;padding-left:2px; }
+.m-input { width:100%;background:#08080a;border:1.5px solid var(--border);border-radius:var(--r-input);padding:12px 13px;color:var(--text);font-family:var(--font);font-size:0.88rem;font-weight:500;outline:none;transition:border-color 0.2s;user-select:text;-webkit-user-select:text;-moz-user-select:text;-ms-user-select:text;cursor:text; }
+.m-input::placeholder { color:var(--text-dim); }
+.m-input:focus { border-color:var(--primary); }
+.m-input.muted { font-size:0.72rem;color:var(--text-sub); }
+.icon-row { display:flex;justify-content:center;padding:4px 0; }
+.icon-prev { width:56px;height:56px;border-radius:14px;background:var(--surface2);border:1px solid var(--border-hi);object-fit:cover;display:block;box-shadow:0 4px 16px rgba(0,0,0,0.4); }
+.modal-div { height:1px;background:var(--border);margin:0; }
+.m-row { display:flex;gap:8px; }
+.m-row .mbtn { flex:1; }
+.mbtn { padding:12px 16px;border-radius:var(--r-btn);border:none;font-family:var(--font);font-weight:700;font-size:0.86rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:opacity 0.18s,transform 0.18s cubic-bezier(0.175,0.885,0.32,1.275);position:relative;overflow:hidden; }
+.mbtn:hover { opacity:0.88;transform:translateY(-1px); }
+.mbtn:active { transform:scale(0.96); }
+.mbtn-p { background:linear-gradient(135deg,#9B3FFF 0%,#6615FF 100%);color:#fff;box-shadow:0 3px 16px rgba(123,47,255,0.3); }
+.mbtn-g { background:var(--surface3);color:var(--text-sub);border:1px solid var(--border-hi); }
+.mbtn-full { width:100%; }
+.mbtn svg { width:14px;height:14px;stroke:currentColor;flex-shrink:0; }
+
+/* ===================== ACTION LIST ===================== */
+.act-list { display:flex;flex-direction:column;gap:6px; }
+.act-item { width:100%;padding:13px 14px;border-radius:var(--r-input);border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:var(--font);font-weight:600;font-size:0.87rem;cursor:pointer;display:flex;align-items:center;gap:13px;transition:background 0.18s,border-color 0.18s,transform 0.15s;text-align:left; }
+.act-item:hover { background:var(--surface3);border-color:var(--border-hi); }
+.act-item:active { transform:scale(0.985); }
+.act-ico { width:32px;height:32px;border-radius:8px;flex-shrink:0;background:var(--surface3);display:flex;align-items:center;justify-content:center;color:var(--text-sub);transition:background 0.18s,color 0.18s; }
+.act-ico svg { width:15px;height:15px;stroke:currentColor; }
+.act-item:hover .act-ico { background:var(--surface4); }
+.act-txt { display:flex;flex-direction:column;gap:1px; }
+.act-title { font-size:0.87rem;font-weight:700; }
+.act-desc  { font-size:0.67rem;font-weight:500;color:var(--text-sub); }
+.act-item.danger { color:var(--error); }
+.act-item.danger .act-ico { color:var(--error); }
+.act-item.danger:hover { background:rgba(255,69,69,0.06);border-color:rgba(255,69,69,0.2); }
+
+/* ===================== SETTINGS ===================== */
+.s-section { display:flex;flex-direction:column;gap:7px; }
+.s-lbl { font-size:0.64rem;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:0.12em;padding-left:2px; }
+.eng-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:6px; }
+.eng-chip { padding:9px 4px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-sub);font-family:var(--font);font-size:0.68rem;font-weight:700;cursor:pointer;text-align:center;transition:border-color 0.18s,background 0.18s,color 0.18s,transform 0.15s; }
+.eng-chip:hover { border-color:var(--border-hi);color:var(--text); }
+.eng-chip:active { transform:scale(0.95); }
+.eng-chip.on { border-color:var(--primary);color:var(--primary);background:var(--primary-dim); }
+.tog-row { display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-input); }
+.tog-info { display:flex;flex-direction:column;gap:1px; }
+.tog-lbl  { font-size:0.82rem;font-weight:700;color:var(--text); }
+.tog-desc { font-size:0.67rem;font-weight:500;color:var(--text-sub); }
+.toggle { position:relative;width:42px;height:24px;flex-shrink:0; }
+.toggle input { opacity:0;width:0;height:0; }
+.tog-track { position:absolute;inset:0;background:var(--border-hi);border-radius:999px;cursor:pointer;transition:background 0.22s; }
+.toggle input:checked + .tog-track { background:var(--primary); }
+.tog-thumb { position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;pointer-events:none;transition:transform 0.22s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 1px 4px rgba(0,0,0,0.35); }
+.toggle input:checked ~ .tog-thumb { transform:translateX(18px); }
+.data-row { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
+.data-btn { padding:11px;border-radius:var(--r-input);border:1px solid var(--border);background:var(--surface2);color:var(--text-sub);font-family:var(--font);font-size:0.74rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:border-color 0.18s,background 0.18s,color 0.18s; }
+.data-btn:hover { border-color:var(--border-hi);color:var(--text);background:var(--surface3); }
+.data-btn svg { width:13px;height:13px;stroke:currentColor; }
+.del-btn { width:100%;padding:12px;border-radius:var(--r-input);border:1px solid rgba(255,69,69,0.18);background:rgba(255,69,69,0.06);color:var(--error);font-family:var(--font);font-size:0.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.18s,border-color 0.18s; }
+.del-btn:hover { background:rgba(255,69,69,0.1);border-color:rgba(255,69,69,0.3); }
+.del-btn svg { width:14px;height:14px;stroke:currentColor; }
+
+/* ===================== TOAST ===================== */
+#toast { position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border-hi);border-radius:999px;padding:9px 18px 9px 13px;font-size:0.79rem;font-weight:700;color:var(--text);white-space:nowrap;z-index:9998;pointer-events:none;display:none;align-items:center;gap:8px; }
+.tdot { width:6px;height:6px;border-radius:50%;flex-shrink:0; }
+#toast.show   { display:flex;animation:toastIn  0.26s both; }
+#toast.hiding { animation:toastOut 0.26s both; }
+#toast.success .tdot { background:var(--success);box-shadow:0 0 6px var(--success); }
+#toast.error   .tdot { background:var(--error);  box-shadow:0 0 6px var(--error); }
+#toast.success { border-color:rgba(0,230,118,0.25); }
+#toast.error   { border-color:rgba(255,69,69,0.25); }
+
+/* ===================== RESPONSIVE ===================== */
+@media(max-width:360px) { .sc-grid{grid-template-columns:repeat(3,1fr)} .card{padding:18px 14px} .eng-grid{grid-template-columns:repeat(2,1fr)} }
+@media(prefers-reduced-motion:reduce) { *,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important} }
+</style>
+</head>
+<body>
+
+<!-- RGB Progress Bar -->
+<div id="pb-wrap"><div id="pb"></div></div>
+
+<!-- Toast -->
+<div id="toast"><div class="tdot"></div><span id="toast-txt"></span></div>
+
+<!-- ============================= MAIN APP ============================= -->
+<div class="app-wrap">
+  <div class="card">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="header-brand">
+        <div class="logo-mark">
+          <img src="https://i.ibb.co/ymnV03Fq/20261019-102733.jpg" alt="HayGo" onerror="this.onerror=null;this.style.display='none';this.parentNode.style.background='linear-gradient(135deg,#CC00FF,#7B2FFF,#2200CC)';this.parentNode.innerHTML+='<svg viewBox=\'0 0 24 24\' style=\'width:18px;height:18px;fill:#fff\'><path d=\'M13 2L3 14h9l-1 8 10-12h-9l1-8z\'/></svg>';">
+        </div>
+        <div class="brand-text">
+          <h1>HayGo</h1>
+          <p>Personal Workspace</p>
+        </div>
+      </div>
+      <div class="hdr-actions">
+        <button class="ico-btn" onclick="openSettings()" title="Settings" aria-label="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Search / URL Input -->
+    <div>
+      <div class="search-wrap">
+        <span class="s-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </span>
+        <input id="mainInput" class="input-box" type="text" placeholder="Enter URL or Search…" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" aria-label="URL or search input">
+        <button class="s-clear" id="clearBtn" onclick="clearInput()" tabindex="-1" aria-label="Clear input">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div id="urlErr" class="err-msg" role="alert">Enter a valid URL or search term.</div>
+      <button class="launch-btn" id="launchBtn" onclick="handleLaunch()" aria-label="Open link">
+        <span class="shim"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        Open Link
+      </button>
+    </div>
+
+    <!-- Shortcuts Section -->
+    <div>
+      <div class="sec-head">
+        <span class="sec-label">Quick Shortcuts</span>
+        <div class="sec-rule"></div>
+        <span class="count-pill" id="countBadge">0</span>
+      </div>
+      <div class="sc-grid" id="shortcutGrid">
+        <div class="sc-item add-btn" id="addBtn" onclick="openAddModal()" style="animation-delay:0.35s" aria-label="Add shortcut">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span class="sc-name">Add</span>
+        </div>
+      </div>
+      <div class="empty-st" id="emptyState">No shortcuts yet — tap <strong style="color:var(--primary)">Add</strong> to get started</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================= ADD / EDIT MODAL ============================= -->
+<div id="editModal" class="overlay" onclick="overlayClick(event,'editModal')" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h2 class="modal-title" id="modalTitle">Add Shortcut</h2>
+      <button class="modal-x" onclick="closeModals()" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="icon-row">
+        <img class="icon-prev" id="iconPreview" src="" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1242/1242392.png'" alt="icon preview">
+      </div>
+      <div class="field">
+        <span class="field-lbl">Name</span>
+        <input type="text" id="nodeName" class="m-input" placeholder="e.g. YouTube">
+      </div>
+      <div class="field">
+        <span class="field-lbl">URL</span>
+        <input type="text" id="nodeUrl" class="m-input" placeholder="e.g. youtube.com">
+      </div>
+      <div class="field">
+        <span class="field-lbl">Icon URL (auto-generated)</span>
+        <input type="text" id="nodeIcon" class="m-input muted" placeholder="https://...">
+      </div>
+      <div class="m-row" style="margin-top:2px;">
+        <button class="mbtn mbtn-g" onclick="closeModals()">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Cancel
+        </button>
+        <button class="mbtn mbtn-p" onclick="saveEntry()">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================= ACTION MENU ============================= -->
+<div id="actionMenu" class="overlay" onclick="overlayClick(event,'actionMenu')" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div>
+        <h2 class="modal-title">Shortcut Actions</h2>
+        <p class="modal-sub" id="actionMenuSubtitle"></p>
+      </div>
+      <button class="modal-x" onclick="closeModals()" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="act-list">
+        <button class="act-item" onclick="triggerOpen()">
+          <div class="act-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
+          <div class="act-txt"><span class="act-title">Open</span><span class="act-desc">Navigate to this shortcut</span></div>
+        </button>
+        <button class="act-item" onclick="triggerEdit()">
+          <div class="act-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+          <div class="act-txt"><span class="act-title">Edit Shortcut</span><span class="act-desc">Change name, URL or icon</span></div>
+        </button>
+        <button class="act-item danger" onclick="triggerDelete()">
+          <div class="act-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></div>
+          <div class="act-txt"><span class="act-title">Remove Shortcut</span><span class="act-desc">Delete permanently</span></div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================= SETTINGS MODAL ============================= -->
+<div id="settingsModal" class="overlay" onclick="overlayClick(event,'settingsModal')" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h2 class="modal-title">Settings</h2>
+      <button class="modal-x" onclick="closeModals()" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+
+      <div class="s-section">
+        <span class="s-lbl">Search Engine</span>
+        <div class="eng-grid" id="engineRow">
+          <button class="eng-chip" data-engine="google" data-url="https://www.google.com/search?q=" onclick="setEngine(this)">Google</button>
+          <button class="eng-chip" data-engine="bing"   data-url="https://www.bing.com/search?q="   onclick="setEngine(this)">Bing</button>
+          <button class="eng-chip" data-engine="ddg"    data-url="https://duckduckgo.com/?q="        onclick="setEngine(this)">DDG</button>
+          <button class="eng-chip" data-engine="brave"  data-url="https://search.brave.com/search?q=" onclick="setEngine(this)">Brave</button>
+        </div>
+      </div>
+
+      <div class="modal-div"></div>
+
+      <div class="s-section">
+        <span class="s-lbl">Behaviour</span>
+        <div class="tog-row">
+          <div class="tog-info">
+            <span class="tog-lbl">Open links in new tab</span>
+            <span class="tog-desc">Links open in a new browser tab</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="newTabToggle" onchange="saveSetting('newTab', this.checked)">
+            <div class="tog-track"></div>
+            <div class="tog-thumb"></div>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-div"></div>
+
+      <div class="s-section">
+        <span class="s-lbl">Data</span>
+        <div class="data-row">
+          <button class="data-btn" onclick="exportShortcuts(); closeModals();">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export JSON
+          </button>
+          <label class="data-btn" style="cursor:pointer;">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Import JSON
+            <input type="file" accept=".json" style="display:none" onchange="importShortcuts(event)">
+          </label>
+        </div>
+        <button class="del-btn" onclick="clearAll()">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          Clear All Shortcuts
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============================= SCRIPT ============================= -->
+<script>
+'use strict';
+
+/* ========== STATE ========== */
+let shortcuts  = [];
+let settings   = { newTab: false, engine: 'google', engineUrl: 'https://www.google.com/search?q=' };
+let activeIndex = null;
+let pressTimer  = null;
+let dragItem    = null; // pointer-based drag (mobile)
+let dragSrc     = null; // HTML5 drag (desktop)
+
+/* ========== STORAGE KEYS ========== */
+const KEYS = { sc: 'elite_shortcuts_v2', st: 'elite_settings_v2' };
+
+/* ========== LOAD / SAVE ========== */
+function load() {
+  try {
+    // Try new key first, fall back to legacy key for migration
+    let raw = localStorage.getItem(KEYS.sc);
+    if (!raw) raw = localStorage.getItem('elite_shortcuts'); // migrate old data
+    shortcuts = raw ? JSON.parse(raw) : defaultShortcuts();
+  } catch { shortcuts = defaultShortcuts(); }
+  try {
+    const s = localStorage.getItem(KEYS.st);
+    if (s) settings = { ...settings, ...JSON.parse(s) };
+  } catch {}
+}
+function persist() { localStorage.setItem(KEYS.sc, JSON.stringify(shortcuts)); }
+function persistSettings() { localStorage.setItem(KEYS.st, JSON.stringify(settings)); }
+function saveSetting(k, v) { settings[k] = v; persistSettings(); }
+
+/* ========== DEFAULT SHORTCUTS ========== */
+function defaultShortcuts() {
+  return [
+    { name: 'Smart IP',  url: 'https://smartipinfo.vercel.app/',    icon: 'https://smartipinfo.vercel.app/favicon.png' },
+    { name: 'Editor',    url: 'https://html-max-editor.vercel.app', icon: 'https://html-max-editor.vercel.app/index.jpg' },
+    { name: 'Proxyium',  url: 'https://proxyium.com',               icon: getIconUrl('https://proxyium.com') },
+    { name: 'GitHub',    url: 'https://github.com',                 icon: getIconUrl('https://github.com') },
+    { name: 'YouTube',   url: 'https://youtube.com',                icon: getIconUrl('https://youtube.com') },
+    { name: 'Gmail',     url: 'https://mail.google.com',            icon: getIconUrl('https://mail.google.com') }
+  ];
+}
+
+/* ========== HELPERS ========== */
+// Original getIconUrl from old file — extracts domain and uses Google favicon API
+function getIconUrl(url) {
+  if (!url) return '';
+  const domain = url.replace(/^(?:https?:\/\/)?(?:www\.)?/i, '').split('/')[0];
+  return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+}
+
+function getDomain(url) {
+  try { return new URL(url.startsWith('http') ? url : 'https://' + url).hostname; }
+  catch { return url.replace(/^(?:https?:\/\/)?(?:www\.)?/i, '').split('/')[0]; }
+}
+
+function ensureHttp(url) { return /^https?:\/\//i.test(url) ? url : 'https://' + url; }
+
+function isUrl(s) { return /^(https?:\/\/)?([\w\d-]+\.)+\w{2,}(\/.*)?$/i.test(s); }
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ========== CLEAR INPUT ========== */
+function clearInput() {
+  const i = document.getElementById('mainInput');
+  i.value = '';
+  i.focus();
+  document.getElementById('clearBtn').classList.remove('vis');
+  document.getElementById('urlErr').classList.remove('show');
+  i.classList.remove('err');
+}
+
+/* ========== LAUNCH — merged from old + new ========== */
+function handleLaunch(direct) {
+  const inp   = document.getElementById('mainInput');
+  const input = (direct !== undefined ? direct : inp.value.trim());
+  const err   = document.getElementById('urlErr');
+
+  if (!input) {
+    inp.classList.add('err');
+    err.classList.add('show');
+    inp.focus();
+    setTimeout(() => { inp.classList.remove('err'); err.classList.remove('show'); }, 2500);
+    return;
+  }
+  inp.classList.remove('err');
+  err.classList.remove('show');
+
+  // RGB progress bar fill
+  const bar = document.getElementById('pb');
+  bar.style.width = '100%';
+
+  setTimeout(() => {
+    let targetUrl;
+    if (isUrl(input)) {
+      targetUrl = input.startsWith('http') ? input : 'https://' + input;
+    } else {
+      targetUrl = settings.engineUrl + encodeURIComponent(input);
+    }
+    if (settings.newTab) window.open(targetUrl, '_blank');
+    else window.location.href = targetUrl;
+    setTimeout(() => { bar.style.width = '0%'; }, 800);
+  }, 600);
+}
+
+/* ========== RENDER ========== */
+function render() {
+  const grid   = document.getElementById('shortcutGrid');
+  const addBtn = document.getElementById('addBtn');
+
+  grid.querySelectorAll('.sc-link').forEach(n => n.remove());
+
+  shortcuts.forEach((item, index) => {
+    const div = document.createElement('div');
+    div.className = 'sc-item sc-link';
+    div.dataset.index = index;
+    div.style.animationDelay = `${Math.min(index * 0.08, 0.5)}s`;
+    div.draggable = true;
+
+    const icon = item.icon || getIconUrl(item.url);
+    div.innerHTML = `
+      <img src="${esc(icon)}" alt="${esc(item.name)}" width="28" height="28"
+           onerror="this.src='https://cdn-icons-png.flaticon.com/512/1242/1242392.png'">
+      <span class="sc-name">${esc(item.name)}</span>
+    `;
+
+    // Pointer interaction (tap / long-press / pointer drag — from old file)
+    div.onpointerdown = (e) => startInteraction(e, index, div);
+
+    // HTML5 drag events (desktop)
+    div.addEventListener('dragstart', onDragStart);
+    div.addEventListener('dragover',  onDragOver);
+    div.addEventListener('drop',      onDrop);
+    div.addEventListener('dragend',   onDragEnd);
+    div.addEventListener('dragenter', (e) => { e.preventDefault(); div.classList.add('drag-over'); });
+    div.addEventListener('dragleave', () => div.classList.remove('drag-over'));
+
+    grid.insertBefore(div, addBtn);
+  });
+
+  document.getElementById('countBadge').textContent = shortcuts.length;
+  document.getElementById('emptyState').style.display = shortcuts.length === 0 ? 'block' : 'none';
+}
+
+/* ========== POINTER INTERACTION (old file pattern) ========== */
+// Handles tap, long-press (action menu), and pointer drag
+function startInteraction(e, index, el) {
+  if (e.button && e.button !== 0) return;
+  let isLongPress = false;
+  const startX = e.clientX;
+  const startY = e.clientY;
+
+  pressTimer = setTimeout(() => {
+    isLongPress = true;
+    navigator.vibrate && navigator.vibrate(30);
+    showActionMenu(index);
+  }, 600);
+
+  el.onpointermove = (moveEv) => {
+    const dist = Math.hypot(moveEv.clientX - startX, moveEv.clientY - startY);
+    if (dist > 10) {
+      clearTimeout(pressTimer);
+      if (!isLongPress) {
+        el.onpointermove = null;
+        initiateDrag(el, index);
+      }
+    }
+  };
+
+  el.onpointerup = () => {
+    clearTimeout(pressTimer);
+    if (!isLongPress && !dragItem) handleLaunch(shortcuts[index].url);
+    el.onpointermove = null;
+    el.onpointerup  = null;
+  };
+}
+
+/* ========== POINTER DRAG — from old file ========== */
+// Live-swap on move, works on touch and mouse
+function initiateDrag(el, index) {
+  dragItem = el;
+  el.classList.add('dragging');
+  el.setPointerCapture && el.setPointerCapture(el._pointerId || 1);
+
+  document.onpointermove = (e) => {
+    const target   = document.elementFromPoint(e.clientX, e.clientY);
+    const overItem = target && target.closest('.sc-link');
+
+    if (overItem && overItem !== dragItem) {
+      const newIdx = parseInt(overItem.dataset.index);
+      const oldIdx = parseInt(dragItem.dataset.index);
+      if (!isNaN(newIdx) && !isNaN(oldIdx) && newIdx !== oldIdx) {
+        [shortcuts[oldIdx], shortcuts[newIdx]] = [shortcuts[newIdx], shortcuts[oldIdx]];
+        persist();
+        render();
+        // Re-acquire drag reference after render
+        dragItem = document.querySelector(`[data-index="${newIdx}"]`);
+        if (dragItem) {
+          dragItem.classList.add('dragging');
+          dragItem.style.animation = 'none';
+        }
+      }
+    }
+  };
+
+  document.onpointerup = () => {
+    if (dragItem) {
+      dragItem.classList.remove('dragging');
+      dragItem.style.animation = '';
+    }
+    dragItem = null;
+    document.onpointermove = null;
+    document.onpointerup  = null;
+    showToast('Order saved', 'success');
+  };
+}
+
+/* ========== HTML5 DRAG (desktop fallback) ========== */
+function onDragStart(e) {
+  dragSrc = this;
+  dragSrc.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', this.dataset.index);
+}
+function onDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+function onDrop(e) {
+  e.preventDefault();
+  if (this === dragSrc) return;
+  const from = parseInt(dragSrc.dataset.index);
+  const to   = parseInt(this.dataset.index);
+  if (isNaN(from) || isNaN(to)) return;
+  [shortcuts[from], shortcuts[to]] = [shortcuts[to], shortcuts[from]];
+  persist();
+  render();
+  showToast('Order saved', 'success');
+}
+function onDragEnd() {
+  document.querySelectorAll('.sc-item').forEach(el => el.classList.remove('dragging', 'drag-over'));
+  dragSrc = null;
+}
+
+/* ========== MODALS ========== */
+function openAddModal() {
+  activeIndex = null;
+  document.getElementById('modalTitle').innerText = 'Add Shortcut';
+  ['nodeName', 'nodeUrl', 'nodeIcon'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('iconPreview').src = '';
+  document.getElementById('editModal').classList.add('open');
+  setTimeout(() => document.getElementById('nodeName').focus(), 120);
+}
+
+function showActionMenu(index) {
+  activeIndex = index;
+  const item = shortcuts[index];
+  document.getElementById('actionMenuSubtitle').textContent = item ? item.name : '';
+  document.getElementById('actionMenu').classList.add('open');
+}
+
+function triggerOpen() {
+  closeModals();
+  if (activeIndex === null) return;
+  const url = ensureHttp(shortcuts[activeIndex].url);
+  if (settings.newTab) window.open(url, '_blank');
+  else window.location.href = url;
+}
+
+function triggerEdit() {
+  const item = shortcuts[activeIndex];
+  document.getElementById('modalTitle').innerText = 'Edit Shortcut';
+  document.getElementById('nodeName').value = item.name;
+  document.getElementById('nodeUrl').value  = item.url;
+  const icon = item.icon || getIconUrl(item.url);
+  document.getElementById('nodeIcon').value   = icon;
+  document.getElementById('iconPreview').src  = icon;
+  document.getElementById('actionMenu').classList.remove('open');
+  document.getElementById('editModal').classList.add('open');
+}
+
+function triggerDelete() {
+  if (activeIndex === null) return;
+  const name = shortcuts[activeIndex].name;
+  shortcuts.splice(activeIndex, 1);
+  persist();
+  closeModals();
+  render();
+  showToast(`"${name}" removed`, 'error');
+}
+
+function saveEntry() {
+  const name = document.getElementById('nodeName').value.trim();
+  let   url  = document.getElementById('nodeUrl').value.trim();
+  const icon = document.getElementById('nodeIcon').value.trim();
+
+  if (!name || !url) { showToast('Name and URL are required', 'error'); return; }
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+  const data = { name, url, icon: icon || getIconUrl(url) };
+
+  if (activeIndex !== null) {
+    shortcuts[activeIndex] = data;
+    showToast('Shortcut updated', 'success');
+  } else {
+    shortcuts.push(data);
+    showToast('Shortcut added', 'success');
+  }
+  persist();
+  closeModals();
+  render();
+}
+
+// saveAndRefresh — original old file function name kept for compatibility
+function saveAndRefresh() {
+  persist();
+  closeModals();
+  render();
+}
+
+function closeModals() {
+  document.querySelectorAll('.overlay').forEach(m => m.classList.remove('open'));
+}
+
+function overlayClick(e, id) {
+  if (e.target === document.getElementById(id)) closeModals();
+}
+
+/* ========== SETTINGS ========== */
+function openSettings() {
+  document.getElementById('newTabToggle').checked = settings.newTab;
+  document.querySelectorAll('.eng-chip').forEach(el => {
+    el.classList.toggle('on', el.dataset.engine === settings.engine);
+  });
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+function setEngine(el) {
+  settings.engine    = el.dataset.engine;
+  settings.engineUrl = el.dataset.url;
+  persistSettings();
+  document.querySelectorAll('.eng-chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  showToast(`Search: ${el.textContent}`, 'success');
+}
+
+/* ========== EXPORT / IMPORT / CLEAR ========== */
+function exportShortcuts() {
+  const json = JSON.stringify(shortcuts, null, 2);
+
+  // Inside the Android app: WebView can't download blob: links, so hand the file to the native Save dialog.
+  if (window.HayGoApp && typeof window.HayGoApp.saveFile === 'function') {
+    window.HayGoApp.saveFile('haygo-shortcuts.json', json);
+    return;
+  }
+
+  const blob = new Blob([json], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'haygo-shortcuts.json'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('Exported successfully', 'success');
+}
+
+function importShortcuts(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!Array.isArray(data)) throw new Error();
+      shortcuts = data.map(s => ({ name: s.name || '?', url: s.url || '#', icon: s.icon || '' }));
+      persist(); render(); closeModals();
+      showToast(`Imported ${shortcuts.length} shortcuts`, 'success');
+    } catch { showToast('Invalid JSON file', 'error'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function clearAll() {
+  if (!confirm('Remove ALL shortcuts?')) return;
+  shortcuts = []; persist(); render(); closeModals();
+  showToast('All shortcuts cleared', 'error');
+}
+
+/* ========== ICON AUTO-FETCH (old file feature) ========== */
+document.getElementById('nodeUrl').addEventListener('input', (e) => {
+  const url = e.target.value.trim();
+  if (url.length > 3) {
+    const icon = getIconUrl(url);
+    document.getElementById('nodeIcon').value  = icon;
+    document.getElementById('iconPreview').src = icon;
+  }
+});
+document.getElementById('nodeIcon').addEventListener('input', (e) => {
+  document.getElementById('iconPreview').src = e.target.value;
+});
+
+/* ========== CLEAR BUTTON VISIBILITY ========== */
+document.getElementById('mainInput').addEventListener('input', e => {
+  document.getElementById('clearBtn').classList.toggle('vis', e.target.value.length > 0);
+});
+
+/* ========== TOAST ========== */
+let toastTimer = null;
+function showToast(msg, type = '') {
+  const el  = document.getElementById('toast');
+  const txt = document.getElementById('toast-txt');
+  if (toastTimer) clearTimeout(toastTimer);
+  el.className = 'show ' + type;
+  txt.textContent = msg;
+  toastTimer = setTimeout(() => {
+    el.classList.add('hiding');
+    setTimeout(() => { el.className = ''; }, 280);
+  }, 2400);
+}
+
+/* ========== KEYBOARD SHORTCUTS ========== */
+document.addEventListener('keydown', e => {
+  const active  = document.activeElement;
+  const inInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k' && !inInput) {
+    e.preventDefault();
+    document.getElementById('mainInput').focus();
+  }
+  if (e.key === 'Escape') closeModals();
+});
+document.getElementById('mainInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleLaunch();
+});
+
+/* ========== INIT ========== */
+window.onload = () => {
+  load();
+  render();
+
+  // Apply persisted settings to UI
+  document.getElementById('newTabToggle').checked = settings.newTab;
+  document.querySelectorAll('.eng-chip').forEach(el => {
+    el.classList.toggle('on', el.dataset.engine === settings.engine);
+  });
+
+  // ?u= URL param auto-launch (original old file feature)
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('u')) handleLaunch(urlParams.get('u'));
+
+  // Context menu: allow on inputs, block everywhere else
+  document.addEventListener('contextmenu', e => {
+    const tag = e.target.tagName.toLowerCase();
+    if (tag !== 'input' && tag !== 'textarea') e.preventDefault();
+  });
+};
+</script>
+</body>
+</html>
