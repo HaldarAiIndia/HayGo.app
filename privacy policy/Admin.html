@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>HayGo Push Admin</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%234F378B'/%3E%3Cpath transform='translate(3.6 3.6) scale(.7)' fill='%23EADDFF' d='M21 3 3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z'/%3E%3C/svg%3E">
+<style>
+/* ===== theme variables are filled by JS (same colour logic as the HayGo app) ===== */
+:root{
+  --primary:#6E8FC9;--on-primary:#fff;--primary-container:#D6E3FF;--on-primary-container:#001B3E;
+  --secondary-container:#DDE5F6;--on-secondary-container:#101C2B;
+  --surface:#F9FAFD;--on-surface:#191C20;--on-surface-variant:#43474E;--outline:#73777F;--outline-variant:#C3C7CF;
+  --sc-low:#F3F4F9;--sc:#EDEEF3;--sc-high:#E7E8EE;--sc-highest:#E1E2E8;
+  --error:#B3261E;--error-container:#F9DEDC;--on-error-container:#410E0B;
+  --inverse-surface:#2E3036;--inverse-on-surface:#F0F0F7;
+  --e-emph:cubic-bezier(.2,0,0,1);--e-dec:cubic-bezier(.05,.7,.1,1);--e-acc:cubic-bezier(.3,0,.8,.15);
+  --font:Roboto,"Google Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{font-family:var(--font);background:var(--surface);color:var(--on-surface);-webkit-font-smoothing:antialiased;min-height:100vh;
+  padding:0 0 max(24px,env(safe-area-inset-bottom))}
+button,input,textarea,select{font:inherit;color:inherit}
+button{border:0;background:none;padding:0;cursor:pointer}
+.ic{width:24px;height:24px;fill:currentColor;flex-shrink:0;display:block}
+.ic.sm{width:18px;height:18px}
+.hidden{display:none!important}
+
+/* state layer + ripple */
+.sl{position:relative;overflow:hidden;isolation:isolate;outline:0}
+.sl::before{content:"";position:absolute;inset:0;background:currentColor;opacity:0;transition:opacity .15s linear;z-index:-1;border-radius:inherit;pointer-events:none}
+@media (hover:hover){.sl:hover::before{opacity:.08}}
+.sl:focus-visible::before,.sl:active::before{opacity:.1}
+.rip{position:absolute;border-radius:50%;background:currentColor;opacity:.14;transform:scale(0);pointer-events:none;z-index:-1;animation:ripple .55s var(--e-emph) forwards}
+@keyframes ripple{to{transform:scale(1);opacity:0}}
+@keyframes rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:none}}
+
+/* top app bar */
+.appbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;height:64px;padding:0 max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left));
+  background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--outline-variant)}
+.logo{width:40px;height:40px;border-radius:12px;background:var(--primary-container);color:var(--on-primary-container);display:grid;place-items:center}
+.appbar h1{margin:0;font-size:1.375rem;font-weight:400;flex:1;white-space:nowrap}
+.appbar h1 small{display:block;font-size:.75rem;color:var(--on-surface-variant);letter-spacing:.04em;margin-top:-2px}
+.icon-btn{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;color:var(--on-surface-variant)}
+.chip{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--outline);font-size:.8125rem;font-weight:500;color:var(--on-surface-variant);white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--outline)}
+.chip.live{border-color:transparent;background:var(--secondary-container);color:var(--on-secondary-container)}
+.chip.live .dot{background:#2E9E5B;box-shadow:0 0 0 0 rgba(46,158,91,.6);animation:pulse 1.8s infinite}
+.chip.err{border-color:transparent;background:var(--error-container);color:var(--on-error-container)}
+.chip.err .dot{background:var(--error)}
+@keyframes pulse{70%{box-shadow:0 0 0 7px rgba(46,158,91,0)}100%{box-shadow:0 0 0 0 rgba(46,158,91,0)}}
+
+/* layout */
+.wrap{max-width:1180px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left));
+  display:flex;flex-direction:column;gap:16px}
+.screen{display:grid;gap:16px;grid-template-columns:1fr;animation:screenIn .38s var(--e-dec) both}
+.screen.hidden{display:none}
+.screen.hist{width:100%;max-width:980px;margin:0 auto}
+@keyframes screenIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (min-width:920px){.screen.new{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);align-items:start}.sticky{position:sticky;top:132px}}
+
+/* ===== navigation: bottom bar on phones, top tabs everywhere else ===== */
+.tabswrap{position:sticky;top:64px;z-index:15;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--outline-variant)}
+.tabs{display:flex;max-width:560px;margin:0 auto;padding:0 max(8px,env(safe-area-inset-right)) 0 max(8px,env(safe-area-inset-left))}
+.tabs .dest{flex:1;height:52px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:.875rem;font-weight:500;color:var(--on-surface-variant);position:relative}
+.tabs .dest.on{color:var(--primary)}
+.tabs .dest::after{content:"";position:absolute;left:18%;right:18%;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--primary);transform:scaleX(0);transition:transform .3s var(--e-emph)}
+.tabs .dest.on::after{transform:scaleX(1)}
+.tabs .nbadge{position:static}
+.navbar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:none;justify-content:space-around;background:var(--sc);
+  padding:12px 8px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -1px 0 var(--outline-variant)}
+.navbar .dest{flex:1;max-width:240px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.75rem;font-weight:500;letter-spacing:.02em;color:var(--on-surface-variant)}
+.navbar .pill{position:relative;width:64px;height:32px;border-radius:16px;display:grid;place-items:center;transition:background .25s var(--e-std),transform .25s var(--e-emph)}
+.navbar .dest:active .pill{transform:scale(.94)}
+.navbar .dest.on{color:var(--on-surface)}
+.navbar .dest.on .pill{background:var(--secondary-container);color:var(--on-secondary-container)}
+.nbadge{min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--error);color:#fff;font-size:.625rem;font-weight:500;display:inline-grid;place-items:center;line-height:1}
+.navbar .nbadge{position:absolute;top:-3px;right:8px}
+.nbadge.hidden{display:none}
+@media (max-width:719px) and (min-height:481px){
+  .tabswrap{display:none}
+  .navbar{display:flex}
+  body{padding-bottom:calc(104px + env(safe-area-inset-bottom))}
+  body #snack{bottom:calc(92px + env(safe-area-inset-bottom))}
+  .sticky{position:static}
+}
+.card{background:var(--sc-low);border-radius:28px;padding:24px;animation:rise .5s var(--e-dec) both}
+.card h2{margin:0 0 4px;font-size:1.25rem;font-weight:500}
+.card .sub{margin:0 0 20px;color:var(--on-surface-variant);font-size:.875rem;line-height:1.35}
+.banner{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:16px;background:var(--error-container);color:var(--on-error-container);font-size:.875rem;line-height:1.4}
+.banner .btn{margin-left:auto}
+
+/* text fields (M3 outlined) */
+.tf{position:relative;margin-bottom:18px}
+.tf input,.tf textarea{width:100%;padding:16px;border-radius:4px;border:1px solid var(--outline);background:transparent;outline:0;font-size:1rem;resize:vertical;transition:border-color .15s,box-shadow .15s}
+.tf input{height:56px;padding-top:0;padding-bottom:0}
+.tf textarea{min-height:112px;line-height:1.45}
+.tf input:hover,.tf textarea:hover{border-color:var(--on-surface)}
+.tf input:focus,.tf textarea:focus{border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary)}
+.tf label{position:absolute;left:12px;top:16px;padding:0 4px;background:var(--sc-low);color:var(--on-surface-variant);font-size:1rem;line-height:1.5rem;pointer-events:none;transform-origin:left top;transition:transform .2s var(--e-emph),color .15s}
+dialog .tf label{background:var(--sc-high)}
+.tf input:focus+label,.tf input:not(:placeholder-shown)+label,.tf textarea:focus+label,.tf textarea:not(:placeholder-shown)+label{transform:translateY(-25px) scale(.75)}
+.tf input:focus+label,.tf textarea:focus+label{color:var(--primary)}
+.tf .count{position:absolute;right:12px;bottom:-18px;font-size:.6875rem;color:var(--on-surface-variant);letter-spacing:.04em}
+.tf .help{position:absolute;left:16px;bottom:-18px;font-size:.6875rem;color:var(--on-surface-variant);letter-spacing:.03em}
+.row{display:grid;gap:16px;grid-template-columns:1fr}
+@media (min-width:560px){.row.two{grid-template-columns:1fr 1fr}}
+.row .tf{margin-bottom:22px}
+
+/* buttons */
+.btn{height:40px;padding:0 24px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:.875rem;font-weight:500;letter-spacing:.007em;transition:transform .25s var(--e-emph)}
+.btn:active{transform:scale(.96)}
+.btn.text{padding:0 12px;color:var(--primary)}
+.btn.filled{background:var(--primary);color:var(--on-primary)}
+.btn.tonal{background:var(--secondary-container);color:var(--on-secondary-container)}
+.btn.outlined{border:1px solid var(--outline);color:var(--primary)}
+.btn.danger{color:var(--error)}
+.btn[disabled]{opacity:.38;pointer-events:none}
+.btn.big{height:48px;padding:0 28px;font-size:.9375rem}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:6px}
+.spacer{flex:1}
+.spin{width:18px;height:18px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:rot .7s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* switch + segmented */
+.switch{position:relative;width:52px;height:32px;flex-shrink:0;display:inline-block}
+.switch input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;z-index:2;cursor:pointer}
+.switch .track{position:absolute;inset:0;border-radius:16px;border:2px solid var(--outline);background:var(--sc-highest);transition:all .2s}
+.switch .thumb{position:absolute;top:50%;left:6px;width:16px;height:16px;border-radius:50%;background:var(--outline);transform:translateY(-50%);display:grid;place-items:center;color:var(--on-primary-container);transition:all .3s var(--e-emph)}
+.switch .thumb .ic{width:16px;height:16px;opacity:0}
+.switch input:checked~.track{background:var(--primary);border-color:var(--primary)}
+.switch input:checked~.thumb{width:24px;height:24px;left:24px;background:var(--on-primary)}
+.switch input:checked~.thumb .ic{opacity:1}
+.seg{display:flex;border:1px solid var(--outline);border-radius:999px;overflow:hidden}
+.seg button{flex:1;height:40px;font-size:.875rem;font-weight:500;color:var(--on-surface);display:flex;align-items:center;justify-content:center;gap:6px}
+.seg button+button{border-left:1px solid var(--outline)}
+.seg button.on{background:var(--secondary-container);color:var(--on-secondary-container)}
+.seg button .ic{display:none}.seg button.on .ic{display:block}
+.li{display:flex;align-items:center;gap:16px;min-height:56px}
+.li .txt{flex:1;min-width:0}.li .txt b{display:block;font-weight:500}.li .txt span{font-size:.8125rem;color:var(--on-surface-variant)}
+.label{font-size:.8125rem;font-weight:500;color:var(--primary);letter-spacing:.02em;margin:18px 0 10px}
+
+/* templates */
+.tpls{display:flex;gap:8px;flex-wrap:wrap;margin:-4px 0 20px}
+.tpl{height:32px;padding:0 6px 0 12px;border-radius:8px;border:1px solid var(--outline);display:inline-flex;align-items:center;gap:6px;font-size:.8125rem;font-weight:500;color:var(--on-surface-variant)}
+.tpl .x{width:22px;height:22px;border-radius:50%;display:grid;place-items:center}
+.tpl .x .ic{width:14px;height:14px}
+
+/* notification preview */
+.phone{background:var(--sc);border-radius:24px;padding:14px}
+.phone .hint{font-size:.6875rem;letter-spacing:.06em;color:var(--on-surface-variant);margin:2px 6px 10px;text-transform:uppercase}
+.notif{background:var(--sc-highest);border-radius:20px;padding:14px 16px;display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:start}
+.notif .head{grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:.75rem;color:var(--on-surface-variant);margin-bottom:6px}
+.notif .head .si{width:18px;height:18px;border-radius:50%;background:var(--primary);color:var(--on-primary);display:grid;place-items:center}
+.notif .head .si .ic{width:12px;height:12px}
+.notif .t{grid-column:1;grid-row:2;font-weight:500;font-size:.9375rem;word-break:break-word}
+.notif .b{grid-column:1;grid-row:3;font-size:.875rem;color:var(--on-surface-variant);line-height:1.35;word-break:break-word;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.notif img{width:48px;height:48px;border-radius:12px;object-fit:cover;grid-row:2/4;grid-column:2}
+.notif .tap{grid-row:4}
+.notif .tap{grid-column:1/-1;margin-top:8px;font-size:.75rem;color:var(--primary);display:flex;gap:6px;align-items:center;word-break:break-all}
+
+/* history */
+.hist{display:flex;flex-direction:column;gap:10px}
+.item{display:flex;gap:14px;padding:14px 12px 14px 14px;border-radius:20px;background:var(--sc);animation:pop .35s var(--e-dec) both}
+.item .av{width:40px;height:40px;border-radius:50%;background:var(--secondary-container);color:var(--on-secondary-container);display:grid;place-items:center;flex-shrink:0;overflow:hidden}
+.item .av img{width:100%;height:100%;object-fit:cover}
+.item .mid{flex:1;min-width:0}
+.item .mid b{display:block;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .mid p{margin:2px 0 6px;font-size:.8125rem;color:var(--on-surface-variant);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.item .meta{font-size:.6875rem;color:var(--on-surface-variant);letter-spacing:.03em;display:flex;gap:10px;flex-wrap:wrap}
+.item .acts{display:flex;flex-direction:column;justify-content:center;gap:2px}
+.item .acts button{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--on-surface-variant)}
+.item .acts .ic{width:20px;height:20px}
+.empty{text-align:center;color:var(--on-surface-variant);padding:28px 8px;font-size:.875rem}
+
+/* dialog */
+dialog{border:0;padding:0;background:transparent;max-width:none;max-height:none;color:var(--on-surface)}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+dialog .box{width:min(calc(100vw - 32px),520px);max-height:calc(100dvh - 40px);overflow:auto;background:var(--sc-high);border-radius:28px;padding:24px}
+dialog[open] .box{animation:pop .35s var(--e-dec)}
+dialog h3{margin:0 0 4px;font-size:1.5rem;font-weight:400}
+dialog .sub{margin:0 0 16px;color:var(--on-surface-variant);font-size:.875rem}
+.swatches{display:flex;gap:12px;flex-wrap:wrap}
+.sw{width:44px;height:44px;border-radius:50%;border:1px solid var(--outline-variant);display:grid;place-items:center;color:#1b1b1b}
+.sw.on{border:3px solid var(--on-surface)}
+.sw .ic{display:none}.sw.on .ic{display:block}
+pre.rules{margin:0;padding:14px;border-radius:16px;background:var(--sc-highest);font-size:.75rem;line-height:1.5;overflow:auto;user-select:all;white-space:pre}
+.divider{height:1px;background:var(--outline-variant);margin:18px 0}
+
+/* snackbar */
+#snack{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));z-index:100;width:min(calc(100vw - 32px),460px);display:flex;align-items:center;gap:8px;min-height:48px;padding:6px 8px 6px 16px;border-radius:4px;
+  background:var(--inverse-surface);color:var(--inverse-on-surface);box-shadow:0 4px 12px rgba(0,0,0,.3);transform:translate(-50%,24px);opacity:0;pointer-events:none;transition:transform .25s var(--e-acc),opacity .15s}
+#snack.show{transform:translate(-50%,0);opacity:1;pointer-events:auto;transition:transform .4s var(--e-dec),opacity .15s}
+#snack .msg{flex:1;font-size:.875rem;line-height:1.25rem}
+#snack button{height:40px;padding:0 12px;border-radius:999px;color:var(--primary);font-weight:500;font-size:.875rem;filter:brightness(1.4)}
+ /* ===== responsive polish ===== */
+html{-webkit-text-size-adjust:100%}
+button,.dest{touch-action:manipulation}
+dialog .box{max-height:calc(100dvh - 24px)}
+@media (min-width:1000px){.hist{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr))}.screen.hist{max-width:1180px}}
+@media (max-width:560px){
+  .card{padding:20px 16px;border-radius:24px}
+  .appbar{gap:8px;padding-left:max(12px,env(safe-area-inset-left));padding-right:max(4px,env(safe-area-inset-right))}
+  .appbar h1{font-size:1.125rem}
+  .chip{padding:0 10px;font-size:.75rem}
+  #statusTxt{max-width:104px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .actions .btn.big{flex:1 1 100%}
+  dialog .box{padding:20px;border-radius:24px}
+  .item{padding:12px 6px 12px 12px;gap:12px}
+}
+@media (max-width:370px){.appbar h1 small{display:none}#btnRefresh{display:none}.logo{width:36px;height:36px}}
+@media (max-height:480px) and (orientation:landscape){.appbar{height:56px}.tabswrap{top:56px}.sticky{top:116px}.card{padding:18px 20px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="i-search" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
+<symbol id="i-add" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></symbol>
+<symbol id="i-delete" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></symbol>
+<symbol id="i-arrow_forward" viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></symbol>
+<symbol id="i-history" viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></symbol>
+<symbol id="i-notifications" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></symbol>
+<symbol id="i-open_in_new" viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></symbol>
+<symbol id="i-content_copy" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></symbol>
+<symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></symbol>
+<symbol id="i-login" viewBox="0 0 24 24"><path d="M11 7L9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-8v2h8v14z"/></symbol>
+<symbol id="i-cloud_off" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-1.48 0-2.85.43-4.01 1.17l1.46 1.46C10.21 6.23 11.08 6 12 6c3.04 0 5.5 2.46 5.5 5.5v.5H19c1.66 0 3 1.34 3 3 0 1.13-.64 2.11-1.56 2.62l1.45 1.45C23.16 18.16 24 16.68 24 15c0-2.64-2.05-4.78-4.65-4.96zM3 5.27l2.75 2.74C2.56 8.15 0 10.77 0 14c0 3.31 2.69 6 6 6h11.73l2 2L21 20.73 4.27 4 3 5.27zM7.73 10l8 8H6c-2.21 0-4-1.79-4-4s1.79-4 4-4h1.73z"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></symbol>
+</svg>
+
+<header class="appbar">
+  <div class="logo"><svg class="ic"><use href="#i-notifications"/></svg></div>
+  <h1>HayGo Push Admin<small id="subtitle">Realtime Database</small></h1>
+  <span class="chip" id="status"><span class="dot"></span><span id="statusTxt">Connecting…</span></span>
+  <button class="icon-btn sl" id="btnRefresh" title="Refresh history" aria-label="Refresh"><svg class="ic"><use href="#i-refresh"/></svg></button>
+  <button class="icon-btn sl" id="btnSettings" title="Settings" aria-label="Settings"><svg class="ic"><use href="#i-settings"/></svg></button>
+</header>
+
+<div class="tabswrap"><div class="tabs" role="tablist" aria-label="Sections">
+  <button class="dest sl on" role="tab" data-s="new" aria-selected="true"><svg class="ic sm"><use href="#i-send"/></svg><span>New notification</span></button>
+  <button class="dest sl" role="tab" data-s="history" aria-selected="false"><svg class="ic sm"><use href="#i-history"/></svg><span>History</span><span class="nbadge hidden"></span></button>
+</div></div>
+
+<div class="wrap">
+
+  <div class="banner span2 hidden" id="authBanner">
+    <svg class="ic"><use href="#i-logout"/></svg>
+    <div><b>Sign in to send.</b><br>Your database only lets the admin account write. Open Settings → Account and sign in.</div>
+    <button class="btn tonal sl" onclick="openSettings('account')">Sign in</button>
+  </div>
+
+  <div class="screen new" id="screenNew" role="tabpanel">
+
+  <!-- COMPOSE -->
+  <section class="card" style="animation-delay:.05s">
+    <h2>New notification</h2>
+    <p class="sub" id="composeSub">Sent to phones that have HayGo installed. With the FCM backend it also arrives when the app is closed.</p>
+
+    <div class="tpls" id="tpls"></div>
+
+    <div class="tf"><input id="fTitle" placeholder=" " maxlength="200" autocomplete="off"><label for="fTitle">Title</label><span class="count" id="cTitle">0/200</span></div>
+    <div class="tf"><textarea id="fBody" placeholder=" " maxlength="1000"></textarea><label for="fBody">Message *</label><span class="count" id="cBody">0/1000</span></div>
+    <div class="row two">
+      <div class="tf"><input id="fUrl" placeholder=" " inputmode="url" autocapitalize="off" autocomplete="off"><label for="fUrl">Link to open (optional)</label><span class="help" id="hUrl"></span></div>
+      <div class="tf"><input id="fTag" placeholder=" " maxlength="100" autocapitalize="off" autocomplete="off"><label for="fTag">Tag (optional)</label><span class="help">Same tag replaces the old one</span></div>
+    </div>
+    <div class="tf"><input id="fIcon" placeholder=" " inputmode="url" autocapitalize="off" autocomplete="off"><label for="fIcon">Image / icon URL (optional)</label><span class="help" id="hIcon"></span></div>
+
+    <div id="audBlock" class="hidden">
+      <div class="label" style="margin-top:0">Send to</div>
+      <div class="seg" id="segAud" style="margin-bottom:16px">
+        <button data-a="all" class="on"><svg class="ic sm"><use href="#i-check"/></svg>Everyone</button>
+        <button data-a="topic"><svg class="ic sm"><use href="#i-check"/></svg>Topic</button>
+        <button data-a="token"><svg class="ic sm"><use href="#i-check"/></svg>One device</button>
+      </div>
+      <div class="tf hidden" id="audWrap"><input id="fAud" placeholder=" " autocomplete="off" autocapitalize="off"><label for="fAud" id="audLabel">Topic name</label><span class="help" id="audHelp"></span></div>
+    </div>
+
+    <div class="li" style="margin:4px 0 12px">
+      <div class="txt"><b>Clear form after sending</b><span>Keeps templates untouched</span></div>
+      <label class="switch"><input type="checkbox" id="optClear" checked><span class="track"></span><span class="thumb"><svg class="ic"><use href="#i-check"/></svg></span></label>
+    </div>
+
+    <div class="actions">
+      <button class="btn filled big sl" id="btnSend"><svg class="ic sm"><use href="#i-send"/></svg><span>Send now</span></button>
+      <button class="btn tonal sl" id="btnTpl"><svg class="ic sm"><use href="#i-bookmark"/></svg>Save template</button>
+      <span class="spacer"></span>
+      <button class="btn text sl" id="btnReset">Reset</button>
+    </div>
+  </section>
+
+  <!-- PREVIEW -->
+  <section class="card sticky" style="animation-delay:.1s">
+    <h2>Preview</h2>
+    <p class="sub">How it looks in the Android notification shade.</p>
+    <div class="phone">
+      <div class="hint">Notification shade</div>
+      <div class="notif">
+        <div class="head"><span class="si"><svg class="ic"><use href="#i-notifications"/></svg></span><span id="pHost">HayGo</span><span>·</span><span>now</span></div>
+        <div class="t" id="pTitle">HayGo</div>
+        <div class="b" id="pBody">Your message appears here.</div>
+        <img id="pIcon" alt="" class="hidden">
+        <div class="tap hidden" id="pTap"><svg class="ic sm"><use href="#i-open_in_new"/></svg><span id="pTapTxt"></span></div>
+      </div>
+    </div>
+  </section>
+
+  </div>
+
+  <div class="screen hist hidden" id="screenHist" role="tabpanel">
+  <!-- HISTORY -->
+  <section class="card" style="animation-delay:.05s">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+      <div style="flex:1;min-width:200px"><h2 style="margin:0">Sent history</h2><p class="sub" style="margin:2px 0 0" id="histSub">Latest 50 entries, live</p></div>
+      <button class="btn outlined danger sl" id="btnClearAll"><svg class="ic sm"><use href="#i-delete"/></svg>Clear all</button>
+    </div>
+    <div class="hist" id="hist"><div class="empty">Loading…</div></div>
+  </section>
+  </div>
+</div>
+
+<!-- bottom navigation (phones) -->
+<nav class="navbar" aria-label="Sections">
+  <button class="dest" data-s="new" aria-label="New notification"><span class="pill sl"><svg class="ic"><use href="#i-send"/></svg></span><span>New</span></button>
+  <button class="dest" data-s="history" aria-label="History"><span class="pill sl"><svg class="ic"><use href="#i-history"/></svg><span class="nbadge hidden"></span></span><span>History</span></button>
+</nav>
+
+<!-- SETTINGS -->
+<dialog id="dlgSettings"><div class="box">
+  <h3>Settings</h3>
+  <p class="sub">Saved only in this browser.</p>
+
+  <div class="label" style="margin-top:4px">Appearance</div>
+  <div class="seg" id="segMode">
+    <button data-m="system"><svg class="ic sm"><use href="#i-check"/></svg>System</button>
+    <button data-m="light"><svg class="ic sm"><use href="#i-check"/></svg>Day</button>
+    <button data-m="dark"><svg class="ic sm"><use href="#i-check"/></svg>Night</button>
+  </div>
+  <div class="label">Theme colour</div>
+  <div class="swatches" id="swatches"></div>
+
+  <div class="divider"></div>
+  <div class="label" style="margin-top:0">Push backend (FCM) · works when the app is closed</div>
+  <p class="sub" style="margin-bottom:12px">Your Cloudflare Worker from <b>haygo-push-worker</b>. The service-account key stays on that server, never in this page.</p>
+  <div class="tf"><input id="sBackend" placeholder=" " inputmode="url" autocapitalize="off" autocomplete="off"><label for="sBackend">Backend URL</label><span class="help">e.g. https://haygo-push.yourname.workers.dev</span></div>
+  <div class="tf"><input id="sAdminTok" type="password" placeholder=" " autocomplete="off"><label for="sAdminTok">Admin token</label></div>
+  <div class="li" style="margin:-2px 0 12px"><div class="txt"><b>Remember on this device</b><span>Off = forgotten when you close the tab</span></div>
+    <label class="switch"><input type="checkbox" id="sRemTok" checked><span class="track"></span><span class="thumb"><svg class="ic"><use href="#i-check"/></svg></span></label></div>
+  <div class="actions" style="margin-top:0"><button class="btn tonal sl" id="btnTestBackend"><svg class="ic sm"><use href="#i-refresh"/></svg>Test connection</button><span id="backendMsg" style="font-size:.8125rem;color:var(--on-surface-variant)"></span></div>
+
+  <div class="divider"></div>
+  <div class="label" style="margin-top:0">Database (history)</div>
+  <div class="tf"><input id="sDb" placeholder=" " autocapitalize="off" autocomplete="off"><label for="sDb">Realtime Database URL</label></div>
+  <div class="tf"><input id="sNode" placeholder=" " autocapitalize="off" autocomplete="off"><label for="sNode">Node name</label></div>
+  <div class="tf"><input id="sKey" placeholder=" " autocapitalize="off" autocomplete="off"><label for="sKey">Web API key (for sign-in)</label></div>
+
+  <div class="divider" id="accountAnchor"></div>
+  <div class="label" style="margin-top:0">Direct database account <span style="font-weight:400;color:var(--on-surface-variant)">(only if no backend is set)</span></div>
+  <div id="accOut" class="hidden">
+    <div class="li"><div class="txt"><b id="accEmail"></b><span>Signed in. You can send and delete.</span></div>
+      <button class="btn tonal sl" id="btnSignOut"><svg class="ic sm"><use href="#i-logout"/></svg>Sign out</button></div>
+  </div>
+  <div id="accIn">
+    <div class="tf"><input id="sEmail" type="email" placeholder=" " autocapitalize="off" autocomplete="username"><label for="sEmail">Admin email</label></div>
+    <div class="tf"><input id="sPass" type="password" placeholder=" " autocomplete="current-password"><label for="sPass">Password</label></div>
+    <div class="li" style="margin:-4px 0 12px"><div class="txt"><b>Stay signed in</b><span>Keeps a session token, never your password</span></div>
+      <label class="switch"><input type="checkbox" id="sStay" checked><span class="track"></span><span class="thumb"><svg class="ic"><use href="#i-check"/></svg></span></label></div>
+    <button class="btn filled sl" id="btnSignIn"><svg class="ic sm"><use href="#i-login"/></svg>Sign in</button>
+    <div id="accErr" style="color:var(--error);font-size:.8125rem;margin-top:10px;line-height:1.4"></div>
+  </div>
+
+  <div class="divider"></div>
+  <div class="label" style="margin-top:0">Recommended database rules</div>
+  <p class="sub" style="margin-bottom:10px" id="rulesSub">Paste in Firebase console → Realtime Database → Rules. Only your email can write; the app can read.</p>
+  <pre class="rules" id="rulesPre"></pre>
+  <div class="actions"><button class="btn tonal sl" id="btnCopyRules"><svg class="ic sm"><use href="#i-content_copy"/></svg>Copy rules</button></div>
+
+  <div class="actions" style="margin-top:22px"><span class="spacer"></span><button class="btn text sl" id="btnCloseSettings">Done</button></div>
+</div></dialog>
+
+<!-- SAVE TEMPLATE -->
+<dialog id="dlgTpl"><div class="box">
+  <h3>Save template</h3><p class="sub">Reuse this notification later with one tap.</p>
+  <div class="tf" style="margin-bottom:8px"><input id="tName" placeholder=" " maxlength="30" autocomplete="off"><label for="tName">Template name</label></div>
+  <div class="actions"><span class="spacer"></span><button class="btn text sl" onclick="$('#dlgTpl').close()">Cancel</button><button class="btn filled sl" id="btnTplSave">Save</button></div>
+</div></dialog>
+
+<!-- CONFIRM -->
+<dialog id="dlgConfirm"><div class="box">
+  <h3 id="cfTitle">Are you sure?</h3><p class="sub" id="cfText"></p>
+  <div class="actions"><span class="spacer"></span><button class="btn text sl" id="cfNo">Cancel</button><button class="btn text danger sl" id="cfYes">Delete</button></div>
+</div></dialog>
+
+<div id="snack" role="status" aria-live="polite"><span class="msg" id="snackMsg"></span><button id="snackAct" class="hidden"></button></div>
+
+<script>
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
+
+/* ============================ config + theme ============================ */
+const DEFAULTS = {
+  dbUrl: 'https://haygo-2007-default-rtdb.asia-southeast1.firebasedatabase.app',
+  node: 'notification_history',
+  apiKey: 'AIzaSyDjWm5SZQbFNNBr6qRafalnWHnl52RXMuw',
+  backend: ''
+};
+let cfg = Object.assign({}, DEFAULTS, LS.get('hgadm_cfg', {}));
+const SEEDS = [['Default', '#ABC7FF'], ['Mint', '#71CAA9'], ['Periwinkle', '#9796FD'], ['Sand', '#E6DD6C'], ['Violet', '#AC93FF'], ['Coral', '#FFAA87']];
+let themeMode = LS.get('hgadm_mode', 'system');
+let seedIdx = Math.min(LS.get('hgadm_seed', 0), SEEDS.length - 1);
+
+const hex = c => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
+const mix = (a, b, t) => { const x = hex(a), y = hex(b); return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
+
+function applyTheme() {
+  const dark = themeMode === 'dark' || (themeMode === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+  const s = SEEDS[seedIdx][1], W = '#ffffff', K = '#000000', r = document.documentElement.style;
+  const set = (o) => { for (const k in o) r.setProperty('--' + k, o[k]); };
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  if (dark) set({
+    'primary': s, 'on-primary': mix(s, K, .78), 'primary-container': mix(s, K, .62), 'on-primary-container': mix(s, W, .75),
+    'secondary-container': mix(s, K, .72), 'on-secondary-container': mix(s, W, .8),
+    'surface': mix('#121212', s, .04), 'on-surface': mix(W, s, .08), 'on-surface-variant': mix('#CCCCCC', s, .15),
+    'outline': mix('#8E8E8E', s, .2), 'outline-variant': mix('#444444', s, .15),
+    'sc-low': mix('#1B1B1B', s, .05), 'sc': mix('#1F1F1F', s, .06), 'sc-high': mix('#2A2A2A', s, .07), 'sc-highest': mix('#353535', s, .08),
+    'error': '#F2B8B5', 'error-container': '#8C1D18', 'on-error-container': '#F9DEDC',
+    'inverse-surface': mix(W, s, .08), 'inverse-on-surface': mix('#2A2A2A', s, .1)
+  });
+  else set({
+    'primary': mix(s, K, .52), 'on-primary': W, 'primary-container': mix(s, W, .55), 'on-primary-container': mix(s, K, .8),
+    'secondary-container': mix(s, W, .75), 'on-secondary-container': mix(s, K, .8),
+    'surface': mix(W, s, .05), 'on-surface': mix(K, s, .1), 'on-surface-variant': mix('#444444', s, .2),
+    'outline': mix('#777777', s, .25), 'outline-variant': mix('#CCCCCC', s, .25),
+    'sc-low': mix(W, s, .08), 'sc': mix(W, s, .12), 'sc-high': mix(W, s, .17), 'sc-highest': mix(W, s, .22),
+    'error': '#B3261E', 'error-container': '#F9DEDC', 'on-error-container': '#410E0B',
+    'inverse-surface': mix('#2E2E2E', s, .1), 'inverse-on-surface': mix(W, s, .1)
+  });
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (themeMode === 'system') applyTheme(); });
+
+/* ============================ ripple + snackbar ============================ */
+document.addEventListener('pointerdown', e => {
+  const el = e.target.closest && e.target.closest('.sl'); if (!el) return;
+  const b = el.getBoundingClientRect(), size = Math.max(b.width, b.height) * 2.2, s = document.createElement('span');
+  s.className = 'rip'; s.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - b.left - size / 2}px;top:${e.clientY - b.top - size / 2}px`;
+  el.appendChild(s); setTimeout(() => s.remove(), 600);
+}, { passive: true });
+
+let snackTimer;
+function snack(msg, action) {
+  const el = $('#snack'), a = $('#snackAct'); clearTimeout(snackTimer);
+  $('#snackMsg').textContent = msg;
+  if (action) { a.textContent = action.label; a.classList.remove('hidden'); a.onclick = () => { el.classList.remove('show'); action.fn(); }; }
+  else { a.classList.add('hidden'); a.onclick = null; }
+  el.classList.add('show'); snackTimer = setTimeout(() => el.classList.remove('show'), action ? 6000 : 3200);
+}
+
+/* ============================ push backend (FCM HTTP v1 server) ============================ */
+const tokStore = {
+  get() { try { return localStorage.getItem('hgadm_tok') || sessionStorage.getItem('hgadm_tok') || ''; } catch (e) { return ''; } },
+  set(v, remember) { try { localStorage.removeItem('hgadm_tok'); sessionStorage.removeItem('hgadm_tok'); if (v) (remember ? localStorage : sessionStorage).setItem('hgadm_tok', v); } catch (e) {} }
+};
+const useBackend = () => !!(cfg.backend && /^https?:\/\//i.test(cfg.backend));
+async function backend(method, path, body) {
+  let r;
+  try {
+    r = await fetch(cfg.backend.replace(/\/+$/, '') + path, {
+      method, headers: { 'Authorization': 'Bearer ' + tokStore.get(), 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined
+    });
+  } catch (e) { const er = new Error('Cannot reach the backend. Check the URL and that it is running.'); er.status = 0; throw er; }
+  let j = {}; try { j = await r.json(); } catch (e) {}
+  if (!r.ok) { const er = new Error(j.error || 'HTTP ' + r.status); er.status = r.status; throw er; }
+  return j;
+}
+function audience() {
+  const a = ($('#segAud .on') || {}).dataset ? $('#segAud .on').dataset.a : 'all';
+  const v = $('#fAud').value.trim();
+  return a === 'all' ? { type: 'all' } : { type: a, value: v };
+}
+
+/* ============================ auth (Firebase Auth REST) ============================ */
+const auth = { idToken: null, refreshToken: LS.get('hgadm_refresh', null), email: LS.get('hgadm_email', ''), exp: 0 };
+
+async function authCall(url, body) {
+  const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+  return r.json().then(j => ({ ok: r.ok, j }));
+}
+function authError(j) {
+  const m = (j && j.error && (j.error.message || j.error)) || '';
+  const t = String(m);
+  if (/INVALID_LOGIN_CREDENTIALS|INVALID_PASSWORD|EMAIL_NOT_FOUND/.test(t)) return 'Wrong email or password.';
+  if (/OPERATION_NOT_ALLOWED/.test(t)) return 'Email/Password sign-in is not enabled. Firebase console → Authentication → Sign-in method → enable Email/Password.';
+  if (/TOO_MANY_ATTEMPTS/.test(t)) return 'Too many attempts. Wait a few minutes and try again.';
+  if (/API key|blocked|referer|API_KEY/i.test(t)) return 'This API key is restricted (for example to the Android app). Use a key that allows web / Identity Toolkit, or remove the restriction.';
+  return t || 'Sign-in failed.';
+}
+async function signIn(email, pass, stay) {
+  const { ok, j } = await authCall(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(cfg.apiKey)}`,
+    JSON.stringify({ email, password: pass, returnSecureToken: true })).catch(() => ({ ok: false, j: { error: { message: 'Network error' } } }));
+  if (!ok) throw new Error(authError(j));
+  auth.idToken = j.idToken; auth.refreshToken = j.refreshToken; auth.email = j.email || email;
+  auth.exp = Date.now() + (parseInt(j.expiresIn, 10) || 3600) * 1000;
+  if (stay) { LS.set('hgadm_refresh', auth.refreshToken); LS.set('hgadm_email', auth.email); } else { LS.del('hgadm_refresh'); LS.set('hgadm_email', auth.email); }
+}
+async function refreshSession() {
+  if (!auth.refreshToken) return false;
+  try {
+    const r = await fetch(`https://securetoken.googleapis.com/v1/token?key=${encodeURIComponent(cfg.apiKey)}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(auth.refreshToken)
+    });
+    const j = await r.json(); if (!r.ok) throw 0;
+    auth.idToken = j.id_token; auth.refreshToken = j.refresh_token || auth.refreshToken;
+    auth.exp = Date.now() + (parseInt(j.expires_in, 10) || 3600) * 1000;
+    if (LS.get('hgadm_refresh', null)) LS.set('hgadm_refresh', auth.refreshToken);
+    return true;
+  } catch (e) { auth.idToken = null; auth.refreshToken = null; LS.del('hgadm_refresh'); return false; }
+}
+async function token() {
+  if (auth.idToken && Date.now() < auth.exp - 60000) return auth.idToken;
+  if (auth.refreshToken && await refreshSession()) return auth.idToken;
+  return null;
+}
+function signOut() { auth.idToken = null; auth.refreshToken = null; LS.del('hgadm_refresh'); renderAccount(); setStatus('ok'); stopStream(); startStream(); loadHistory(); }
+
+/* ============================ database (Realtime Database REST) ============================ */
+const base = () => cfg.dbUrl.replace(/\/+$/, '');
+async function db(method, path, body, params) {
+  const tok = await token();
+  const u = new URL(`${base()}/${path}.json`);
+  if (tok) u.searchParams.set('auth', tok);
+  if (params) for (const k in params) u.searchParams.set(k, params[k]);
+  const r = await fetch(u, { method, headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined, body: body !== undefined ? JSON.stringify(body) : undefined });
+  if (!r.ok) {
+    let m = ''; try { m = (await r.json()).error || ''; } catch (e) {}
+    const e = new Error(r.status === 401 || /permission/i.test(m) ? 'PERMISSION' : (m || 'HTTP ' + r.status)); e.status = r.status; throw e;
+  }
+  return r.json();
+}
+const histParams = { orderBy: '"$key"', limitToLast: '50' };
+
+/* ---- live updates (server-sent events) ---- */
+let es = null, reloadTimer;
+async function startStream() {
+  stopStream();
+  try {
+    const tok = await token();
+    stopStream();
+    const u = new URL(`${base()}/${cfg.node}.json`);
+    u.searchParams.set('orderBy', '"$key"'); u.searchParams.set('limitToLast', '50');
+    if (tok) u.searchParams.set('auth', tok);
+    es = new EventSource(u.toString());
+    const bump = () => { clearTimeout(reloadTimer); reloadTimer = setTimeout(loadHistory, 250); setStatus('live'); };
+    es.addEventListener('put', bump); es.addEventListener('patch', bump);
+    es.addEventListener('auth_revoked', () => { stopStream(); refreshSession().then(startStream); });
+    es.onerror = () => setStatus('offline');
+    es.onopen = () => setStatus('live');
+  } catch (e) { setStatus('offline'); }
+}
+function stopStream() { if (es) { es.close(); es = null; } }
+
+function setStatus(s) {
+  const c = $('#status'), t = $('#statusTxt');
+  c.className = 'chip' + (s === 'live' ? ' live' : s === 'offline' || s === 'error' ? ' err' : '');
+  t.textContent = s === 'live' ? (useBackend() ? 'Live · FCM backend' : auth.email && auth.idToken ? 'Live · ' + auth.email : 'Live · read only') : s === 'offline' ? 'Offline' : s === 'error' ? 'Check settings' : 'Connecting…';
+  $('#subtitle').textContent = cfg.node;
+}
+
+/* ============================ push-id time + formatting ============================ */
+const PUSH_CHARS = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
+function pushTime(key) { let t = 0; for (let i = 0; i < 8; i++) { const n = PUSH_CHARS.indexOf(key[i]); if (n < 0) return 0; t = t * 64 + n; } return t; }
+function ago(ms) {
+  if (!ms) return '';
+  const s = Math.max(0, Math.round((Date.now() - ms) / 1000));
+  if (s < 10) return 'just now'; if (s < 60) return s + 's ago';
+  const m = Math.round(s / 60); if (m < 60) return m + ' min ago';
+  const h = Math.round(m / 60); if (h < 24) return h + ' h ago';
+  const d = Math.round(h / 24); if (d < 30) return d + ' d ago';
+  return new Date(ms).toLocaleDateString();
+}
+const isHttp = u => /^https?:\/\/[^\s]+$/i.test(u);
+const hostOf = u => { try { return new URL(u).host; } catch (e) { return ''; } };
+
+/* ============================ compose form ============================ */
+const F = { title: $('#fTitle'), body: $('#fBody'), url: $('#fUrl'), tag: $('#fTag'), icon: $('#fIcon') };
+function readForm() { return { title: F.title.value.trim(), body: F.body.value.trim(), url: F.url.value.trim(), tag: F.tag.value.trim(), icon: F.icon.value.trim() }; }
+function fillForm(v) { F.title.value = v.title || ''; F.body.value = v.body || ''; F.url.value = v.url || ''; F.tag.value = v.tag || ''; F.icon.value = v.icon || ''; updatePreview(); }
+
+function updatePreview() {
+  const v = readForm();
+  $('#cTitle').textContent = v.title.length + '/200'; $('#cBody').textContent = F.body.value.length + '/1000';
+  $('#hUrl').textContent = v.url && !isHttp(v.url) ? 'Must start with http:// or https://' : '';
+  $('#hIcon').textContent = v.icon && !isHttp(v.icon) ? 'Must start with http:// or https://' : '';
+  $('#pTitle').textContent = v.title || 'HayGo';
+  $('#pBody').textContent = v.body || 'Your message appears here.';
+  $('#pHost').textContent = (v.url && isHttp(v.url) && hostOf(v.url)) || 'HayGo';
+  const img = $('#pIcon');
+  if (v.icon && isHttp(v.icon)) { img.src = v.icon; img.classList.remove('hidden'); img.onerror = () => img.classList.add('hidden'); } else img.classList.add('hidden');
+  const tap = $('#pTap');
+  if (v.url && isHttp(v.url)) { tap.classList.remove('hidden'); $('#pTapTxt').textContent = 'Opens ' + v.url; } else tap.classList.add('hidden');
+}
+Object.values(F).forEach(el => el.addEventListener('input', updatePreview));
+
+function entryFrom(v) {
+  const e = { body: v.body };
+  if (v.title) e.title = v.title; if (v.url) e.url = v.url; if (v.icon) e.icon = v.icon; if (v.tag) e.tag = v.tag;
+  e.createdAt = { '.sv': 'timestamp' };
+  return e;
+}
+
+async function send(values, quiet) {
+  const v = values || readForm();
+  if (!v.body) { snack('Write a message first'); if (!values) F.body.focus(); return false; }
+  if (v.url && !isHttp(v.url)) { snack('The link must start with http:// or https://'); return false; }
+  if (v.icon && !isHttp(v.icon)) { snack('The image URL must start with http:// or https://'); return false; }
+  const btn = $('#btnSend'); if (!values) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span><span>Sending…</span>'; }
+  try {
+    let name;
+    if (useBackend()) {
+      const payload = { title: v.title, body: v.body, url: v.url, icon: v.icon, tag: v.tag, target: values ? { type: 'all' } : audience() };
+      if (payload.target.type !== 'all' && !payload.target.value) { snack(payload.target.type === 'token' ? 'Paste the device token first' : 'Enter a topic name first'); return false; }
+      const r = await backend('POST', '/api/send', payload); name = r.historyKey;
+    } else {
+      const res = await db('POST', cfg.node, entryFrom(v)); name = res && res.name;
+    }
+    $('#authBanner').classList.add('hidden');
+    const tgt = values ? 'all' : (audience().type);
+    snack(quiet ? 'Sent again' : useBackend() ? (tgt === 'token' ? 'Sent to that device' : tgt === 'topic' ? 'Sent to the topic' : 'Sent via FCM · reaches phones even when HayGo is closed') : 'Sent · delivered to all running HayGo apps', sendAction());
+    if (!values && $('#optClear').checked) fillForm({});
+    clearTimeout(reloadTimer); reloadTimer = setTimeout(loadHistory, 400);
+    return name || true;
+  } catch (e) {
+    if (useBackend() && e.status === 401) snack('Wrong admin token.', { label: 'Settings', fn: () => openSettings() });
+    else if (e.message === 'PERMISSION') { $('#authBanner').classList.remove('hidden'); snack('Not allowed to write. Sign in with the admin account.', { label: 'Sign in', fn: () => openSettings('account') }); }
+    else snack('Could not send: ' + e.message);
+    return false;
+  } finally { if (!values) { btn.disabled = false; btn.innerHTML = '<svg class="ic sm"><use href="#i-send"/></svg><span>Send now</span>'; } }
+}
+
+/* ============================ templates ============================ */
+const DEFAULT_TPLS = [
+  { name: 'Welcome', v: { title: 'Welcome to HayGo', body: 'Thanks for installing HayGo. Enjoy fast, private browsing.' } },
+  { name: 'Update', v: { title: 'New version available', body: 'A new HayGo update is ready with improvements and fixes.' } },
+  { name: 'Maintenance', v: { title: 'Scheduled maintenance', body: 'Some features may be unavailable for a short time tonight.' } }
+];
+let tpls = LS.get('hgadm_tpls', DEFAULT_TPLS);
+function renderTpls() {
+  const box = $('#tpls'); box.innerHTML = '';
+  tpls.forEach((t, i) => {
+    const el = document.createElement('span'); el.className = 'tpl sl'; el.tabIndex = 0;
+    const n = document.createElement('span'); n.textContent = t.name; el.appendChild(n);
+    const x = document.createElement('button'); x.className = 'x sl'; x.title = 'Remove template'; x.setAttribute('aria-label', 'Remove template ' + t.name);
+    x.innerHTML = '<svg class="ic"><use href="#i-close"/></svg>';
+    x.onclick = ev => { ev.stopPropagation(); tpls.splice(i, 1); LS.set('hgadm_tpls', tpls); renderTpls(); };
+    el.appendChild(x); el.onclick = () => fillForm(t.v);
+    box.appendChild(el);
+  });
+}
+
+/* ============================ history ============================ */
+let lastItems = [];
+async function loadHistory() {
+  try {
+    const data = await db('GET', cfg.node, undefined, histParams);
+    setStatus('live');
+    const list = [];
+    if (data && typeof data === 'object') for (const k of Object.keys(data)) {
+      const v = data[k]; const o = (v && typeof v === 'object') ? v : { body: String(v) };
+      list.push({ key: k, t: (typeof o.createdAt === 'number' ? o.createdAt : pushTime(k)), o });
+    }
+    list.sort((a, b) => a.key < b.key ? 1 : -1);
+    lastItems = list; renderHistory();
+  } catch (e) {
+    if (e.message === 'PERMISSION') { $('#hist').innerHTML = '<div class="empty">The database rules do not allow reading this node yet. See Settings → Recommended rules.</div>'; setStatus('error'); }
+    else { $('#hist').innerHTML = '<div class="empty">Could not load history: ' + escapeText(e.message) + '</div>'; setStatus('error'); }
+  }
+}
+const escapeText = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function renderHistory() {
+  updateBadge();
+  const box = $('#hist'); box.innerHTML = '';
+  $('#histSub').textContent = lastItems.length ? `${lastItems.length} most recent, live` : 'Latest 50 entries, live';
+  $('#btnClearAll').disabled = !lastItems.length;
+  if (!lastItems.length) { box.innerHTML = '<div class="empty">Nothing sent yet. Your notifications will appear here.</div>'; return; }
+  lastItems.forEach((it, i) => {
+    const o = it.o, row = document.createElement('div'); row.className = 'item'; row.style.animationDelay = Math.min(i * 25, 300) + 'ms';
+    const av = document.createElement('div'); av.className = 'av';
+    if (o.icon && isHttp(String(o.icon))) { const im = document.createElement('img'); im.src = o.icon; im.alt = ''; im.onerror = () => { av.innerHTML = '<svg class="ic"><use href="#i-notifications"/></svg>'; }; av.appendChild(im); }
+    else av.innerHTML = '<svg class="ic"><use href="#i-notifications"/></svg>';
+    const mid = document.createElement('div'); mid.className = 'mid';
+    const b = document.createElement('b'); b.textContent = o.title || 'HayGo';
+    const p = document.createElement('p'); p.textContent = o.body || o.message || o.text || '';
+    const meta = document.createElement('div'); meta.className = 'meta';
+    const parts = [ago(it.t)]; if (o.tag) parts.push('#' + o.tag); if (o.url) parts.push(hostOf(String(o.url)) || String(o.url));
+    parts.forEach(t => { const s = document.createElement('span'); s.textContent = t; meta.appendChild(s); });
+    mid.append(b, p, meta);
+    const acts = document.createElement('div'); acts.className = 'acts';
+    const again = document.createElement('button'); again.className = 'sl'; again.title = 'Send again'; again.setAttribute('aria-label', 'Send again'); again.innerHTML = '<svg class="ic"><use href="#i-send"/></svg>';
+    again.onclick = () => send({ title: o.title || '', body: String(o.body || o.message || o.text || ''), url: o.url ? String(o.url) : '', icon: o.icon ? String(o.icon) : '', tag: o.tag ? String(o.tag) : '' }, true);
+    const edit = document.createElement('button'); edit.className = 'sl'; edit.title = 'Edit as new'; edit.setAttribute('aria-label', 'Copy into form'); edit.innerHTML = '<svg class="ic"><use href="#i-edit"/></svg>';
+    edit.onclick = () => { fillForm({ title: o.title || '', body: String(o.body || o.message || o.text || ''), url: o.url ? String(o.url) : '', icon: o.icon ? String(o.icon) : '', tag: o.tag ? String(o.tag) : '' }); showScreen('new'); F.body.focus(); };
+    const del = document.createElement('button'); del.className = 'sl'; del.title = 'Delete'; del.setAttribute('aria-label', 'Delete'); del.innerHTML = '<svg class="ic"><use href="#i-delete"/></svg>';
+    del.onclick = () => removeEntry(it);
+    acts.append(again, edit, del);
+    row.append(av, mid, acts); box.appendChild(row);
+  });
+}
+
+async function removeEntry(it) {
+  try {
+    if (useBackend()) await backend('DELETE', '/api/history/' + encodeURIComponent(it.key)); else await db('DELETE', `${cfg.node}/${it.key}`);
+    lastItems = lastItems.filter(x => x.key !== it.key); renderHistory();
+    snack('Entry deleted', { label: 'Undo', fn: async () => { try { if (useBackend()) await backend('PUT', '/api/history/' + encodeURIComponent(it.key), it.o); else await db('PUT', `${cfg.node}/${it.key}`, it.o); loadHistory(); } catch (e) { snack('Could not restore: ' + e.message); } } });
+  } catch (e) {
+    if (useBackend() && e.status === 401) snack('Wrong admin token.', { label: 'Settings', fn: () => openSettings() });
+    else if (e.message === 'PERMISSION') snack('Not allowed. Sign in with the admin account.', { label: 'Sign in', fn: () => openSettings('account') });
+    else snack('Could not delete: ' + e.message);
+  }
+}
+
+function confirmBox(title, text, yes) {
+  $('#cfTitle').textContent = title; $('#cfText').textContent = text; const d = $('#dlgConfirm');
+  $('#cfNo').onclick = () => d.close(); $('#cfYes').textContent = yes; $('#cfYes').onclick = () => { d.close(); confirmBox.cb && confirmBox.cb(); };
+  d.showModal();
+}
+
+/* ============================ settings dialog ============================ */
+function renderAccount() {
+  const on = !!(auth.idToken || auth.refreshToken);
+  $('#accOut').classList.toggle('hidden', !on); $('#accIn').classList.toggle('hidden', on);
+  $('#accEmail').textContent = auth.email || 'Admin';
+}
+function renderRules() {
+  const em = (auth.email || $('#sEmail').value.trim() || 'YOUR_EMAIL@example.com').replace(/'/g, '');
+  const node = ($('#sNode').value.trim() || cfg.node).replace(/^\/+|\/+$/g, '');
+  $('#rulesSub').textContent = useBackend() ? 'Paste in Firebase console → Realtime Database → Rules. The backend writes with its service account, so nobody else needs write access; the app can read.' : 'Paste in Firebase console → Realtime Database → Rules. Only your email can write; the app can read.';
+  $('#rulesPre').textContent = JSON.stringify({
+    rules: {
+      [node]: {
+        '.read': true,
+        '.write': useBackend() ? false : `auth != null && auth.token.email == '${em}'`,
+        '$entryId': { '.validate': "newData.isString() || newData.hasChildren(['body'])" }
+      },
+      '.read': false, '.write': false
+    }
+  }, null, 2);
+}
+function renderTheme() {
+  document.querySelectorAll('#segMode button').forEach(b => b.classList.toggle('on', b.dataset.m === themeMode));
+  const box = $('#swatches'); box.innerHTML = '';
+  SEEDS.forEach(([name, c], i) => {
+    const b = document.createElement('button'); b.className = 'sw sl' + (i === seedIdx ? ' on' : ''); b.style.background = c; b.title = name; b.setAttribute('aria-label', name);
+    b.innerHTML = '<svg class="ic"><use href="#i-check"/></svg>';
+    b.onclick = () => { seedIdx = i; LS.set('hgadm_seed', i); applyTheme(); renderTheme(); };
+    box.appendChild(b);
+  });
+}
+function openSettings(section) {
+  $('#sDb').value = cfg.dbUrl; $('#sNode').value = cfg.node; $('#sKey').value = cfg.apiKey; $('#sEmail').value = auth.email || '';
+  $('#sBackend').value = cfg.backend || ''; $('#sAdminTok').value = tokStore.get(); $('#backendMsg').textContent = '';
+  $('#accErr').textContent = ''; renderAccount(); renderRules(); renderTheme();
+  $('#dlgSettings').showModal();
+  if (section === 'account') setTimeout(() => $('#accountAnchor').scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+}
+function saveConnection() {
+  const n = { dbUrl: $('#sDb').value.trim().replace(/\/+$/, ''), node: $('#sNode').value.trim().replace(/^\/+|\/+$/g, '') || DEFAULTS.node, apiKey: $('#sKey').value.trim(), backend: $('#sBackend').value.trim().replace(/\/+$/, '') };
+  tokStore.set($('#sAdminTok').value.trim(), $('#sRemTok').checked);
+  const changed = n.dbUrl !== cfg.dbUrl || n.node !== cfg.node || n.apiKey !== cfg.apiKey;
+  if (!/^https:\/\/.+/.test(n.dbUrl)) n.dbUrl = DEFAULTS.dbUrl;
+  cfg = Object.assign({}, cfg, n); LS.set('hgadm_cfg', cfg);
+  applyMode();
+  if (changed) { setStatus('connecting'); startStream(); loadHistory(); } else setStatus('live');
+}
+$('#segMode').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; themeMode = b.dataset.m; LS.set('hgadm_mode', themeMode); applyTheme(); renderTheme(); });
+$('#btnSettings').onclick = () => openSettings();
+$('#btnCloseSettings').onclick = () => $('#dlgSettings').close();
+$('#dlgSettings').addEventListener('close', saveConnection);
+$('#sEmail').addEventListener('input', renderRules);
+$('#sNode').addEventListener('input', renderRules);
+$('#btnCopyRules').onclick = () => { navigator.clipboard.writeText($('#rulesPre').textContent).then(() => snack('Rules copied'), () => snack('Select the rules and copy manually')); };
+$('#btnSignIn').onclick = async () => {
+  const email = $('#sEmail').value.trim(), pass = $('#sPass').value, btn = $('#btnSignIn');
+  if (!email || !pass) { $('#accErr').textContent = 'Enter the admin email and password.'; return; }
+  cfg.apiKey = $('#sKey').value.trim() || cfg.apiKey; LS.set('hgadm_cfg', cfg);
+  btn.disabled = true; $('#accErr').textContent = '';
+  try { await signIn(email, pass, $('#sStay').checked); $('#sPass').value = ''; renderAccount(); renderRules(); $('#authBanner').classList.add('hidden'); startStream(); loadHistory(); snack('Signed in as ' + auth.email); }
+  catch (e) { $('#accErr').textContent = e.message; }
+  finally { btn.disabled = false; }
+};
+$('#btnSignOut').onclick = signOut;
+
+/* ============================ audience + backend test ============================ */
+function applyMode() {
+  $('#audBlock').classList.toggle('hidden', !useBackend());
+  if (!useBackend()) $('#authBanner').classList.add('hidden');
+}
+$('#segAud').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#segAud button').forEach(x => x.classList.toggle('on', x === b));
+  const a = b.dataset.a, w = $('#audWrap');
+  w.classList.toggle('hidden', a === 'all');
+  $('#audLabel').textContent = a === 'token' ? 'Device token' : 'Topic name';
+  $('#audHelp').textContent = a === 'token' ? 'FCM registration token of one phone' : 'Phones subscribed to this topic';
+  if (a !== 'all') $('#fAud').focus();
+});
+$('#btnTestBackend').onclick = async () => {
+  const url = $('#sBackend').value.trim().replace(/\/+$/, ''), msg = $('#backendMsg');
+  if (!/^https?:\/\//i.test(url)) { msg.textContent = 'Enter the backend URL first.'; return; }
+  const prev = { b: cfg.backend, t: tokStore.get() };
+  cfg.backend = url; tokStore.set($('#sAdminTok').value.trim(), $('#sRemTok').checked); msg.textContent = 'Testing…';
+  try { const r = await backend('GET', '/api/ping'); msg.style.color = 'var(--primary)'; msg.textContent = '✓ Connected · project ' + r.project; }
+  catch (e) { msg.style.color = 'var(--error)'; msg.textContent = e.status === 401 ? 'Wrong admin token.' : e.message; cfg.backend = prev.b; tokStore.set(prev.t, true); }
+};
+
+/* ============================ screens (New notification / History) ============================ */
+const SCREEN_IDS = { new: '#screenNew', history: '#screenHist' };
+let currentScreen = 'new';
+function showScreen(name) {
+  if (!SCREEN_IDS[name]) name = 'new';
+  currentScreen = name;
+  for (const k in SCREEN_IDS) {
+    const el = $(SCREEN_IDS[k]), on = k === name;
+    if (on && el.classList.contains('hidden')) { el.classList.remove('hidden'); el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; }
+    else if (!on) el.classList.add('hidden');
+  }
+  document.querySelectorAll('[data-s]').forEach(b => { const on = b.dataset.s === name; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); if (b.getAttribute('role') !== 'tab') b.setAttribute('aria-current', on ? 'page' : 'false'); });
+  LS.set('hgadm_screen', name);
+  if (location.hash !== '#' + name) location.hash = name;
+  window.scrollTo({ top: 0 });
+}
+document.querySelectorAll('[data-s]').forEach(b => b.addEventListener('click', () => showScreen(b.dataset.s)));
+window.addEventListener('hashchange', () => { const n = location.hash.replace('#', ''); if (SCREEN_IDS[n] && n !== currentScreen) showScreen(n); });
+function updateBadge() {
+  document.querySelectorAll('.nbadge').forEach(el => { const n = lastItems.length; el.textContent = n > 99 ? '99+' : n; el.classList.toggle('hidden', !n); });
+}
+const sendAction = () => currentScreen === 'new' ? { label: 'History', fn: () => showScreen('history') } : undefined;
+
+/* ============================ buttons ============================ */
+$('#btnSend').onclick = () => send();
+$('#btnReset').onclick = () => fillForm({});
+$('#btnRefresh').onclick = () => { loadHistory(); startStream(); snack('Refreshed'); };
+$('#btnTpl').onclick = () => {
+  const v = readForm(); if (!v.body && !v.title) { snack('Fill in a title or message first'); return; }
+  $('#tName').value = v.title.slice(0, 30); $('#dlgTpl').showModal(); setTimeout(() => $('#tName').focus(), 50);
+};
+$('#btnTplSave').onclick = () => {
+  const name = $('#tName').value.trim(); if (!name) { $('#tName').focus(); return; }
+  tpls.push({ name, v: readForm() }); LS.set('hgadm_tpls', tpls); renderTpls(); $('#dlgTpl').close(); snack('Template saved');
+};
+$('#btnClearAll').onclick = () => {
+  confirmBox('Delete all history?', 'Removes every entry under "' + cfg.node + '". Phones keep notifications they already showed.', 'Delete all');
+  confirmBox.cb = async () => {
+    try { if (useBackend()) await backend('DELETE', '/api/history'); else await db('DELETE', cfg.node); lastItems = []; renderHistory(); snack('History cleared'); }
+    catch (e) { if (useBackend() && e.status === 401) snack('Wrong admin token.', { label: 'Settings', fn: () => openSettings() }); else if (e.message === 'PERMISSION') snack('Not allowed. Sign in with the admin account.', { label: 'Sign in', fn: () => openSettings('account') }); else snack('Could not clear: ' + e.message); }
+  };
+};
+document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !$('#dlgSettings').open) { e.preventDefault(); send(); } });
+setInterval(() => { if (lastItems.length) renderHistory(); }, 60000);   // keep "x min ago" fresh
+
+/* ============================ start ============================ */
+(async function init() {
+  applyTheme(); renderTpls(); updatePreview(); applyMode(); setStatus('connecting');
+  const h0 = location.hash.replace('#', ''); showScreen(SCREEN_IDS[h0] ? h0 : LS.get('hgadm_screen', 'new'));
+  if (auth.refreshToken) { await refreshSession(); }
+  renderAccount();
+  startStream(); loadHistory();
+})();
+</script>
+</body>
+</html>
